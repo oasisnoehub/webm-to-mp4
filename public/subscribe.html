@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订阅专业版 - VideoConvert</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subscribe-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .plan-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price span {
+            font-size: 1.2rem;
+            font-weight: 400;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-top: 1.5rem;
+            text-align: left;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .plan-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .plan-features li:before {
+            content: "✓";
+            margin-right: 0.8rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .payment-section {
+            padding: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .payment-method {
+            padding: 1.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .payment-method:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .payment-method.selected {
+            border-color: #667eea;
+            background: #f8f9ff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .payment-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .payment-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .qr-code-section {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: #f8f9ff;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background: white;
+            margin: 1rem auto;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            border: 2px solid #e0e0e0;
+        }
+
+        .btn-subscribe {
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-subscribe:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .security-note {
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .security-note:before {
+            content: "🔒 ";
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .back-link a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .success-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-content {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            max-width: 400px;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .success-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .payment-methods {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>订阅专业版</h1>
+            <p>解锁所有高级功能，享受无限制转换</p>
+        </div>
+
+        <div class="subscribe-container">
+            <div class="plan-summary">
+                <div class="plan-name" id="planName">专业版</div>
+                <div class="plan-price" id="planPrice">¥29<span>/月</span></div>
+                <ul class="plan-features" id="planFeatures">
+                    <li>无限次转换</li>
+                    <li>最大 500MB 文件</li>
+                    <li>高速转换</li>
+                    <li>批量转换功能</li>
+                    <li>优先技术支持</li>
+                    <li>无广告体验</li>
+                </ul>
+            </div>
+
+            <div class="payment-section">
+                <div class="section-title">选择支付方式</div>
+                
+                <div class="payment-methods">
+                    <div class="payment-method" onclick="selectPayment('wechat')">
+                        <div class="payment-icon">💬</div>
+                        <div class="payment-name">微信支付</div>
+                    </div>
+                    <div class="payment-method" onclick="selectPayment('alipay')">
+                        <div class="payment-icon">💳</div>
+                        <div class="payment-name">支付宝</div>
+                    </div>
+                    <div class="payment-method" onclick="selectPayment('card')">
+                        <div class="payment-icon">💰</div>
+                        <div class="payment-name">信用卡</div>
+                    </div>
+                </div>
+
+                <!-- 二维码支付 -->
+                <div class="qr-code-section" id="qrCodeSection">
+                    <h3>请使用<span id="paymentMethodName"></span>扫码支付</h3>
+                    <div class="qr-code">📱</div>
+                    <p style="color: #666;">扫描二维码完成支付</p>
+                    <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">支付金额: <strong id="paymentAmount"></strong></p>
+                    <div id="paymentStatus" style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 8px; display: none;">
+                        <p style="color: #856404; margin: 0; font-weight: 600;">⏳ 等待支付确认...</p>
+                        <p style="color: #856404; margin: 0.5rem 0 0 0; font-size: 0.9rem;">请在手机上完成支付</p>
+                    </div>
+                </div>
+
+                <!-- 信用卡表单 -->
+                <div id="cardForm" style="display: none;">
+                    <div class="form-group">
+                        <label>卡号</label>
+                        <input type="text" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>有效期</label>
+                            <input type="text" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="text" placeholder="123" maxlength="3">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>持卡人姓名</label>
+                        <input type="text" placeholder="ZHANG SAN">
+                    </div>
+                </div>
+
+                <button class="btn-subscribe" id="subscribeBtn" onclick="handleSubscribe()">
+                    立即订阅
+                </button>
+
+                <div class="security-note">
+                    安全支付 · 支持退款 · 自动续费可随时取消
+                </div>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html">← 返回首页</a>
+        </div>
+    </div>
+
+    <!-- 成功模态框 -->
+    <div class="success-modal" id="successModal">
+        <div class="success-content">
+            <div class="success-icon">🎉</div>
+            <h2>订阅成功！</h2>
+            <p style="color: #666; margin: 1rem 0;">您已成功订阅专业版</p>
+            <p style="color: #999; font-size: 0.9rem; margin-bottom: 2rem;">现在可以享受无限次转换了</p>
+            <button class="btn-subscribe" onclick="window.location.href='index.html'">
+                开始使用
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let selectedPaymentMethod = null;
+        let selectedPlan = 'pro';
+
+        // 从 URL 获取计划
+        const urlParams = new URLSearchParams(window.location.search);
+        const plan = urlParams.get('plan') || 'pro';
+
+        // 设置计划信息
+        const plans = {
+            pro: {
+                name: '专业版',
+                price: '¥29',
+                period: '/月',
+                features: [
+                    '无限次转换',
+                    '最大 500MB 文件',
+                    '高速转换',
+                    '批量转换功能',
+                    '优先技术支持',
+                    '无广告体验'
+                ]
+            },
+            enterprise: {
+                name: '企业版',
+                price: '¥199',
+                period: '/月',
+                features: [
+                    '无限次转换',
+                    '无文件大小限制',
+                    '极速转换',
+                    'API 接口访问',
+                    '团队协作功能',
+                    '专属客户经理',
+                    'SLA 服务保障'
+                ]
+            }
+        };
+
+        function initPlan() {
+            const planInfo = plans[plan];
+            document.getElementById('planName').textContent = planInfo.name;
+            document.getElementById('planPrice').innerHTML = `${planInfo.price}<span>${planInfo.period}</span>`;
+            
+            const featuresHTML = planInfo.features.map(f => `<li>${f}</li>`).join('');
+            document.getElementById('planFeatures').innerHTML = featuresHTML;
+        }
+
+        function selectPayment(method) {
+            selectedPaymentMethod = method;
+            
+            // 更新选中状态
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.target.closest('.payment-method').classList.add('selected');
+
+            // 显示/隐藏相应的支付界面
+            const qrSection = document.getElementById('qrCodeSection');
+            const cardForm = document.getElementById('cardForm');
+            const paymentStatus = document.getElementById('paymentStatus');
+            
+            if (method === 'wechat' || method === 'alipay') {
+                qrSection.style.display = 'block';
+                cardForm.style.display = 'none';
+                paymentStatus.style.display = 'none';
+                document.getElementById('paymentMethodName').textContent = method === 'wechat' ? '微信' : '支付宝';
+                document.getElementById('paymentAmount').textContent = plans[plan].price;
+            } else if (method === 'card') {
+                qrSection.style.display = 'none';
+                cardForm.style.display = 'block';
+            }
+        }
+
+        function handleSubscribe() {
+            if (!selectedPaymentMethod) {
+                alert('请选择支付方式');
+                return;
+            }
+
+            // 检查是否登录
+            const user = JSON.parse(localStorage.getItem('videoconvert_user') || 'null');
+            if (!user) {
+                alert('请先登录后再订阅');
+                window.location.href = 'auth.html?redirect=subscribe&plan=' + plan;
+                return;
+            }
+
+            // 开始支付流程
+            const btn = document.getElementById('subscribeBtn');
+            btn.textContent = '正在处理支付...';
+            btn.disabled = true;
+
+            // 模拟支付验证流程
+            if (selectedPaymentMethod === 'wechat' || selectedPaymentMethod === 'alipay') {
+                // 二维码支付 - 模拟等待扫码
+                simulateQRPayment(user);
+            } else if (selectedPaymentMethod === 'card') {
+                // 信用卡支付 - 验证表单
+                if (validateCardForm()) {
+                    simulateCardPayment(user);
+                } else {
+                    btn.textContent = '立即订阅';
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        function validateCardForm() {
+            const cardNumber = document.querySelector('input[placeholder="1234 5678 9012 3456"]').value;
+            const expiry = document.querySelector('input[placeholder="MM/YY"]').value;
+            const cvv = document.querySelector('input[placeholder="123"]').value;
+            const name = document.querySelector('input[placeholder="ZHANG SAN"]').value;
+
+            if (!cardNumber || !expiry || !cvv || !name) {
+                alert('请填写完整的信用卡信息');
+                return false;
+            }
+
+            if (cardNumber.replace(/\s/g, '').length < 13) {
+                alert('请输入有效的卡号');
+                return false;
+            }
+
+            if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+                alert('请输入有效的有效期（格式：MM/YY）');
+                return false;
+            }
+
+            if (cvv.length !== 3) {
+                alert('请输入有效的 CVV（3位数字）');
+                return false;
+            }
+
+            return true;
+        }
+
+        function simulateQRPayment(user) {
+            const btn = document.getElementById('subscribeBtn');
+            const paymentStatus = document.getElementById('paymentStatus');
+            
+            btn.textContent = '等待扫码支付...';
+            paymentStatus.style.display = 'block';
+            
+            // 显示倒计时
+            let countdown = 120; // 2分钟
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                btn.textContent = `等待支付 (${countdown}s)`;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    btn.textContent = '支付超时，请重试';
+                    btn.disabled = false;
+                    paymentStatus.style.display = 'none';
+                    alert('支付超时，请重新尝试');
+                }
+            }, 1000);
+
+            // 模拟支付成功（10秒后）
+            setTimeout(() => {
+                clearInterval(countdownInterval);
+                
+                // 更新状态为验证中
+                paymentStatus.innerHTML = '<p style="color: #0066cc; margin: 0; font-weight: 600;">🔍 正在验证支付...</p>';
+                btn.textContent = '验证支付中...';
+                
+                // 验证支付结果（2秒后）
+                setTimeout(() => {
+                    const paymentSuccess = confirm('【演示模式】支付验证：\n\n点击"确定"模拟支付成功\n点击"取消"模拟支付失败');
+                    
+                    if (paymentSuccess) {
+                        paymentStatus.innerHTML = '<p style="color: #27ae60; margin: 0; font-weight: 600;">✓ 支付验证成功</p>';
+                        setTimeout(() => {
+                            processSuccessfulPayment(user);
+                        }, 1000);
+                    } else {
+                        btn.textContent = '支付失败，请重试';
+                        btn.disabled = false;
+                        paymentStatus.innerHTML = '<p style="color: #e74c3c; margin: 0; font-weight: 600;">✗ 支付失败</p>';
+                        setTimeout(() => {
+                            paymentStatus.style.display = 'none';
+                        }, 3000);
+                        alert('支付失败：未检测到支付记录，请重新尝试');
+                    }
+                }, 2000);
+            }, 10000);
+        }
+
+        function simulateCardPayment(user) {
+            const btn = document.getElementById('subscribeBtn');
+            btn.textContent = '正在验证支付信息...';
+            
+            // 第一步：验证卡信息（2秒）
+            setTimeout(() => {
+                btn.textContent = '正在处理支付...';
+                
+                // 第二步：处理支付（2秒）
+                setTimeout(() => {
+                    btn.textContent = '正在验证支付结果...';
+                    
+                    // 第三步：验证支付结果（1秒）
+                    setTimeout(() => {
+                        // 模拟支付验证（演示模式）
+                        const paymentSuccess = confirm('【演示模式】支付验证：\n\n点击"确定"模拟支付成功\n点击"取消"模拟支付失败');
+                        
+                        if (paymentSuccess) {
+                            btn.textContent = '支付成功！';
+                            setTimeout(() => {
+                                processSuccessfulPayment(user);
+                            }, 500);
+                        } else {
+                            btn.textContent = '支付失败，请重试';
+                            btn.disabled = false;
+                            
+                            // 随机错误消息
+                            const errors = [
+                                '银行拒绝了此次交易，请检查卡信息',
+                                '余额不足，请更换支付方式',
+                                '卡片已过期，请使用其他卡片',
+                                '支付验证失败，请稍后重试'
+                            ];
+                            const errorMsg = errors[Math.floor(Math.random() * errors.length)];
+                            alert('支付失败：' + errorMsg);
+                        }
+                    }, 1000);
+                }, 2000);
+            }, 2000);
+        }
+
+        function processSuccessfulPayment(user) {
+            // 生成订单号
+            const orderId = 'VC' + Date.now() + Math.random().toString(36).substr(2, 9).toUpperCase();
+            
+            // 更新用户订阅状态
+            user.plan = plan;
+            user.subscribeTime = new Date().toISOString();
+            user.subscribeExpire = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+            user.orderId = orderId;
+            user.paymentMethod = selectedPaymentMethod;
+            user.paymentAmount = plans[plan].price;
+            
+            localStorage.setItem('videoconvert_user', JSON.stringify(user));
+
+            // 重置使用次数
+            localStorage.setItem('videoconvert_usage', '0');
+
+            // 记录支付成功
+            console.log('支付成功:', {
+                orderId: orderId,
+                plan: plan,
+                amount: plans[plan].price,
+                method: selectedPaymentMethod,
+                time: new Date().toISOString()
+            });
+
+            // 显示成功模态框
+            document.getElementById('successModal').style.display = 'flex';
+        }
+
+        // 初始化
+        initPlan();
+    </script>
+</body>
+</html>

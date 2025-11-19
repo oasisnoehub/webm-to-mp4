@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 / 注册 - VideoConvert</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            color: #666;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: #999;
+            position: relative;
+        }
+
+        .divider:before,
+        .divider:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider:before {
+            left: 0;
+        }
+
+        .divider:after {
+            right: 0;
+        }
+
+        .social-login {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn-social {
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-social:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #e74c3c;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #27ae60;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">🎬 VideoConvert</div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('login')">登录</div>
+            <div class="tab" onclick="switchTab('register')">注册</div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <!-- 登录表单 -->
+        <div class="form-section active" id="loginForm">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>邮箱</label>
+                    <input type="email" id="loginEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-submit">登录</button>
+            </form>
+
+            <div class="divider">或</div>
+
+            <div class="social-login">
+                <button class="btn-social" onclick="socialLogin('wechat')">
+                    <span>💬</span> 微信
+                </button>
+                <button class="btn-social" onclick="socialLogin('google')">
+                    <span>🔍</span> Google
+                </button>
+            </div>
+        </div>
+
+        <!-- 注册表单 -->
+        <div class="form-section" id="registerForm">
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="registerName" required placeholder="您的名字">
+                </div>
+                <div class="form-group">
+                    <label>邮箱</label>
+                    <input type="email" id="registerEmail" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="registerPassword" required placeholder="至少 6 位字符">
+                </div>
+                <div class="form-group">
+                    <label>确认密码</label>
+                    <input type="password" id="registerPasswordConfirm" required placeholder="再次输入密码">
+                </div>
+                <button type="submit" class="btn-submit">注册</button>
+            </form>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            // 切换标签
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 切换表单
+            document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.getElementById('registerForm').classList.add('active');
+            }
+
+            // 清除消息
+            hideMessages();
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => errorEl.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+            setTimeout(() => successEl.style.display = 'none', 5000);
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showError('请填写完整信息');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('密码至少需要 6 位字符');
+                return;
+            }
+
+            // 验证邮箱格式
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('请输入有效的邮箱地址');
+                return;
+            }
+
+            // 模拟登录验证
+            showSuccess('正在验证...');
+            
+            setTimeout(() => {
+                // 检查是否有已注册用户（简单演示）
+                const existingUser = localStorage.getItem('videoconvert_registered_' + email);
+                
+                if (existingUser) {
+                    const userData = JSON.parse(existingUser);
+                    // 实际应用中应该验证密码哈希
+                    if (userData.password === password) {
+                        loginSuccess(userData);
+                    } else {
+                        showError('密码错误');
+                    }
+                } else {
+                    // 演示模式：自动创建用户
+                    const user = {
+                        email: email,
+                        name: email.split('@')[0],
+                        plan: 'free',
+                        loginTime: new Date().toISOString(),
+                        password: password
+                    };
+                    localStorage.setItem('videoconvert_registered_' + email, JSON.stringify(user));
+                    loginSuccess(user);
+                }
+            }, 1000);
+        }
+
+        function loginSuccess(user) {
+            // 保存当前用户
+            const currentUser = {
+                email: user.email,
+                name: user.name,
+                plan: user.plan || 'free',
+                loginTime: new Date().toISOString()
+            };
+            
+            // 如果有订阅信息，保留
+            if (user.subscribeTime) {
+                currentUser.subscribeTime = user.subscribeTime;
+                currentUser.subscribeExpire = user.subscribeExpire;
+                currentUser.orderId = user.orderId;
+            }
+            
+            localStorage.setItem('videoconvert_user', JSON.stringify(currentUser));
+            
+            showSuccess('登录成功！正在跳转...');
+            
+            // 检查是否有重定向
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get('redirect');
+            const plan = urlParams.get('plan');
+            
+            setTimeout(() => {
+                if (redirect === 'subscribe' && plan) {
+                    window.location.href = `subscribe.html?plan=${plan}`;
+                } else {
+                    window.location.href = 'index.html';
+                }
+            }, 1500);
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+            if (!name || !email || !password || !passwordConfirm) {
+                showError('请填写完整信息');
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                showError('两次输入的密码不一致');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('密码至少需要 6 位字符');
+                return;
+            }
+
+            // 验证邮箱格式
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('请输入有效的邮箱地址');
+                return;
+            }
+
+            // 检查邮箱是否已注册
+            const existingUser = localStorage.getItem('videoconvert_registered_' + email);
+            if (existingUser) {
+                showError('该邮箱已被注册，请直接登录');
+                return;
+            }
+
+            showSuccess('正在注册...');
+
+            setTimeout(() => {
+                // 保存注册信息
+                const user = {
+                    email: email,
+                    name: name,
+                    plan: 'free',
+                    registerTime: new Date().toISOString(),
+                    password: password
+                };
+                
+                localStorage.setItem('videoconvert_registered_' + email, JSON.stringify(user));
+                
+                // 自动登录
+                loginSuccess(user);
+            }, 1000);
+        }
+
+        function socialLogin(provider) {
+            showSuccess(`正在通过 ${provider === 'wechat' ? '微信' : 'Google'} 登录...`);
+            
+            // 模拟社交登录
+            setTimeout(() => {
+                const email = `user_${Date.now()}@${provider}.com`;
+                const user = {
+                    email: email,
+                    name: `${provider === 'wechat' ? '微信' : 'Google'}用户`,
+                    plan: 'free',
+                    loginTime: new Date().toISOString(),
+                    provider: provider
+                };
+                
+                // 保存注册信息
+                localStorage.setItem('videoconvert_registered_' + email, JSON.stringify(user));
+                
+                // 登录
+                loginSuccess(user);
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

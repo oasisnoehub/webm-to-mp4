@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的账户 - VideoConvert</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .account-grid {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .sidebar-item {
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .sidebar-item:hover {
+            background: #f8f9ff;
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .info-card {
+            background: #f8f9ff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .plan-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .plan-badge {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .plan-features li:before {
+            content: "✓";
+            margin-right: 0.8rem;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .usage-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #f8f9ff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .account-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="logo">🎬 VideoConvert</div>
+            <a href="index.html" style="color: #667eea; text-decoration: none; font-weight: 600;">← 返回首页</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="account-grid">
+            <div class="sidebar">
+                <div class="sidebar-item active" onclick="showSection('overview')">
+                    <span>📊</span> 概览
+                </div>
+                <div class="sidebar-item" onclick="showSection('subscription')">
+                    <span>💳</span> 订阅管理
+                </div>
+                <div class="sidebar-item" onclick="showSection('profile')">
+                    <span>👤</span> 个人信息
+                </div>
+                <div class="sidebar-item" onclick="logout()">
+                    <span>🚪</span> 退出登录
+                </div>
+            </div>
+
+            <div class="main-content">
+                <!-- 概览 -->
+                <div id="overviewSection">
+                    <h2 class="section-title">账户概览</h2>
+                    
+                    <div class="plan-card" id="planCard">
+                        <div class="plan-header">
+                            <div class="plan-name" id="currentPlanName">免费版</div>
+                            <div class="plan-badge" id="planStatus">活跃</div>
+                        </div>
+                        <ul class="plan-features" id="planFeaturesList">
+                            <li>每天 3 次转换</li>
+                            <li>最大 50MB 文件</li>
+                        </ul>
+                        <button class="btn btn-primary" id="upgradeButton" onclick="window.location.href='subscribe.html'">
+                            升级到专业版
+                        </button>
+                    </div>
+
+                    <h3 style="margin-bottom: 1rem; color: #333;">使用统计</h3>
+                    <div class="usage-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="todayUsage">0</div>
+                            <div class="stat-label">今日转换</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalUsage">0</div>
+                            <div class="stat-label">总转换次数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="remainingUsage">3</div>
+                            <div class="stat-label">剩余额度</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 订阅管理 -->
+                <div id="subscriptionSection" style="display: none;">
+                    <h2 class="section-title">订阅管理</h2>
+                    
+                    <div class="info-card">
+                        <div class="info-row">
+                            <span class="info-label">当前计划</span>
+                            <span class="info-value" id="subPlanName">免费版</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">订阅状态</span>
+                            <span class="info-value" id="subStatus">未订阅</span>
+                        </div>
+                        <div class="info-row" id="expireRow" style="display: none;">
+                            <span class="info-label">到期时间</span>
+                            <span class="info-value" id="subExpire">-</span>
+                        </div>
+                        <div class="info-row" id="renewRow" style="display: none;">
+                            <span class="info-label">自动续费</span>
+                            <span class="info-value" id="autoRenew">已开启</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" onclick="window.location.href='subscribe.html'">
+                            升级计划
+                        </button>
+                        <button class="btn btn-secondary" id="cancelSubBtn" style="display: none;" onclick="cancelSubscription()">
+                            取消订阅
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 个人信息 -->
+                <div id="profileSection" style="display: none;">
+                    <h2 class="section-title">个人信息</h2>
+                    
+                    <div class="info-card">
+                        <div class="info-row">
+                            <span class="info-label">用户名</span>
+                            <span class="info-value" id="profileName">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">邮箱</span>
+                            <span class="info-value" id="profileEmail">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">注册时间</span>
+                            <span class="info-value" id="profileRegisterTime">-</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-danger" onclick="deleteAccount()">
+                        删除账户
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        function initAccount() {
+            const userStr = localStorage.getItem('videoconvert_user');
+            if (!userStr) {
+                alert('请先登录');
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            currentUser = JSON.parse(userStr);
+            updateUI();
+        }
+
+        function updateUI() {
+            // 更新计划信息
+            const planNames = {
+                free: '免费版',
+                pro: '专业版',
+                enterprise: '企业版'
+            };
+
+            const planName = planNames[currentUser.plan] || '免费版';
+            document.getElementById('currentPlanName').textContent = planName;
+            document.getElementById('subPlanName').textContent = planName;
+
+            // 更新计划特性
+            if (currentUser.plan === 'pro' || currentUser.plan === 'enterprise') {
+                const features = currentUser.plan === 'pro' 
+                    ? ['无限次转换', '最大 500MB 文件', '高速转换', '批量转换', '无广告']
+                    : ['无限次转换', '无文件大小限制', 'API 接口', '团队协作', '专属支持'];
+                
+                document.getElementById('planFeaturesList').innerHTML = features.map(f => `<li>${f}</li>`).join('');
+                document.getElementById('upgradeButton').style.display = 'none';
+                document.getElementById('subStatus').textContent = '已订阅';
+                document.getElementById('expireRow').style.display = 'flex';
+                document.getElementById('renewRow').style.display = 'flex';
+                document.getElementById('cancelSubBtn').style.display = 'block';
+
+                if (currentUser.subscribeExpire) {
+                    const expireDate = new Date(currentUser.subscribeExpire);
+                    document.getElementById('subExpire').textContent = expireDate.toLocaleDateString('zh-CN');
+                }
+            }
+
+            // 更新使用统计
+            const usage = parseInt(localStorage.getItem('videoconvert_usage') || '0');
+            document.getElementById('todayUsage').textContent = usage;
+            document.getElementById('totalUsage').textContent = usage;
+            
+            if (currentUser.plan === 'pro' || currentUser.plan === 'enterprise') {
+                document.getElementById('remainingUsage').textContent = '∞';
+            } else {
+                document.getElementById('remainingUsage').textContent = Math.max(0, 3 - usage);
+            }
+
+            // 更新个人信息
+            document.getElementById('profileName').textContent = currentUser.name;
+            document.getElementById('profileEmail').textContent = currentUser.email;
+            
+            if (currentUser.registerTime) {
+                const registerDate = new Date(currentUser.registerTime);
+                document.getElementById('profileRegisterTime').textContent = registerDate.toLocaleDateString('zh-CN');
+            }
+        }
+
+        function showSection(section) {
+            // 更新侧边栏
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // 显示对应内容
+            document.getElementById('overviewSection').style.display = section === 'overview' ? 'block' : 'none';
+            document.getElementById('subscriptionSection').style.display = section === 'subscription' ? 'block' : 'none';
+            document.getElementById('profileSection').style.display = section === 'profile' ? 'block' : 'none';
+        }
+
+        function cancelSubscription() {
+            if (confirm('确定要取消订阅吗？取消后将在当前周期结束后恢复为免费版。')) {
+                alert('订阅已取消。您可以继续使用到 ' + new Date(currentUser.subscribeExpire).toLocaleDateString('zh-CN'));
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('确定要删除账户吗？此操作不可恢复！')) {
+                if (confirm('再次确认：删除账户将清除所有数据，确定继续吗？')) {
+                    localStorage.removeItem('videoconvert_user');
+                    localStorage.removeItem('videoconvert_usage');
+                    alert('账户已删除');
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('videoconvert_user');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 初始化
+        initAccount();
+    </script>
+</body>
+</html>

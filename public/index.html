@@ -40,6 +40,38 @@
             gap: 1.5rem;
         }
 
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-name {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .plan-badge {
+            padding: 0.3rem 0.8rem;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: #fff;
+            font-weight: 600;
+        }
+
         .usage-badge {
             padding: 0.5rem 1rem;
             background: rgba(255, 255, 255, 0.1);
@@ -62,6 +94,22 @@
         .btn-upgrade:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-login {
+            padding: 0.5rem 1.5rem;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
         /* 主容器 */
@@ -483,9 +531,23 @@
     <!-- 导航栏 -->
     <nav>
         <div class="logo">🎬 VideoConvert</div>
-        <div class="usage-info">
-            <div class="usage-badge" id="usageBadge">免费额度: 3/3 次</div>
-            <button class="btn-upgrade" onclick="scrollToPricing()">升级专业版</button>
+        <div class="usage-info" id="navInfo">
+            <!-- 未登录状态 -->
+            <div id="guestNav">
+                <div class="usage-badge" id="usageBadge">免费额度: 3/3 次</div>
+                <button class="btn-login" onclick="window.location.href='auth.html'">登录</button>
+                <button class="btn-upgrade" onclick="scrollToPricing()">升级专业版</button>
+            </div>
+            <!-- 已登录状态 -->
+            <div id="userNav" style="display: none;">
+                <div class="user-info" onclick="window.location.href='account.html'" style="cursor: pointer;">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-name" id="userName">用户</div>
+                    <div class="plan-badge" id="userPlan">免费版</div>
+                </div>
+                <div class="usage-badge" id="userUsageBadge">今日: 3/3 次</div>
+                <button class="btn-upgrade" id="upgradeBtn" onclick="goToSubscribe()">升级</button>
+            </div>
         </div>
     </nav>
 
@@ -567,7 +629,7 @@
                         <li>批量转换</li>
                         <li>无广告</li>
                     </ul>
-                    <button class="btn-plan" onclick="alert('订阅功能开发中\n\n即将支持：\n- 微信支付\n- 支付宝\n- 信用卡')">立即订阅</button>
+                    <button class="btn-plan" onclick="goToSubscribe('pro')">立即订阅</button>
                 </div>
 
                 <div class="pricing-card">
@@ -580,7 +642,7 @@
                         <li>团队协作</li>
                         <li>专属支持</li>
                     </ul>
-                    <button class="btn-plan" onclick="alert('请联系我们的销售团队\n\n邮箱: sales@videoconvert.com\n电话: 400-xxx-xxxx')">联系销售</button>
+                    <button class="btn-plan" onclick="goToSubscribe('enterprise')">联系销售</button>
                 </div>
             </div>
         </div>
@@ -599,7 +661,7 @@
                 <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">无限次转换 · 高速处理 · 无广告</p>
             </div>
             
-            <button class="btn-convert" onclick="alert('订阅功能开发中')">立即升级</button>
+            <button class="btn-convert" onclick="goToSubscribe('pro')">立即升级</button>
             <button class="btn-reset" onclick="closeModal()" style="margin-top: 0.5rem;">稍后再说</button>
         </div>
     </div>
@@ -611,24 +673,88 @@
         let selectedFile = null;
         let outputData = null;
 
-        // 使用次数管理
+        // 用户管理
+        let currentUser = null;
         const MAX_FREE_USES = 3;
-        let usageCount = parseInt(localStorage.getItem('videoconvert_usage') || '0');
+        let usageCount = 0;
+
+        function initUser() {
+            const userStr = localStorage.getItem('videoconvert_user');
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+                showUserNav();
+            } else {
+                showGuestNav();
+            }
+            updateUsageBadge();
+        }
+
+        function showUserNav() {
+            document.getElementById('guestNav').style.display = 'none';
+            document.getElementById('userNav').style.display = 'flex';
+            
+            // 更新用户信息
+            const avatar = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('userAvatar').textContent = avatar;
+            document.getElementById('userName').textContent = currentUser.name;
+            
+            // 更新计划徽章
+            const planBadge = document.getElementById('userPlan');
+            if (currentUser.plan === 'pro') {
+                planBadge.textContent = '专业版';
+                planBadge.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                document.getElementById('upgradeBtn').style.display = 'none';
+            } else if (currentUser.plan === 'enterprise') {
+                planBadge.textContent = '企业版';
+                planBadge.style.background = 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+                document.getElementById('upgradeBtn').style.display = 'none';
+            } else {
+                planBadge.textContent = '免费版';
+            }
+        }
+
+        function showGuestNav() {
+            document.getElementById('guestNav').style.display = 'flex';
+            document.getElementById('userNav').style.display = 'none';
+        }
 
         function updateUsageBadge() {
-            const remaining = Math.max(0, MAX_FREE_USES - usageCount);
-            document.getElementById('usageBadge').textContent = `免费额度: ${remaining}/${MAX_FREE_USES} 次`;
+            usageCount = parseInt(localStorage.getItem('videoconvert_usage') || '0');
             
-            if (remaining === 0) {
-                document.getElementById('usageBadge').style.background = 'rgba(231, 76, 60, 0.2)';
-                document.getElementById('usageBadge').style.color = '#e74c3c';
-            } else if (remaining === 1) {
-                document.getElementById('usageBadge').style.background = 'rgba(241, 196, 15, 0.2)';
-                document.getElementById('usageBadge').style.color = '#f1c40f';
+            if (currentUser && (currentUser.plan === 'pro' || currentUser.plan === 'enterprise')) {
+                // 付费用户显示无限
+                const badge = document.getElementById('userUsageBadge');
+                if (badge) {
+                    badge.textContent = '无限使用 ∞';
+                    badge.style.background = 'rgba(46, 204, 113, 0.2)';
+                    badge.style.color = '#2ecc71';
+                }
+            } else {
+                // 免费用户显示剩余次数
+                const remaining = Math.max(0, MAX_FREE_USES - usageCount);
+                const badge = currentUser ? document.getElementById('userUsageBadge') : document.getElementById('usageBadge');
+                
+                if (badge) {
+                    badge.textContent = currentUser ? `今日: ${remaining}/${MAX_FREE_USES} 次` : `免费额度: ${remaining}/${MAX_FREE_USES} 次`;
+                    
+                    if (remaining === 0) {
+                        badge.style.background = 'rgba(231, 76, 60, 0.2)';
+                        badge.style.color = '#e74c3c';
+                    } else if (remaining === 1) {
+                        badge.style.background = 'rgba(241, 196, 15, 0.2)';
+                        badge.style.color = '#f1c40f';
+                    }
+                }
             }
         }
 
         function checkUsageLimit() {
+            // 付费用户无限制
+            if (currentUser && (currentUser.plan === 'pro' || currentUser.plan === 'enterprise')) {
+                return true;
+            }
+            
+            // 免费用户检查次数
             if (usageCount >= MAX_FREE_USES) {
                 document.getElementById('limitModal').style.display = 'flex';
                 return false;
@@ -637,6 +763,11 @@
         }
 
         function incrementUsage() {
+            // 付费用户不计数
+            if (currentUser && (currentUser.plan === 'pro' || currentUser.plan === 'enterprise')) {
+                return;
+            }
+            
             usageCount++;
             localStorage.setItem('videoconvert_usage', usageCount.toString());
             updateUsageBadge();
@@ -650,8 +781,24 @@
             document.getElementById('pricingSection').scrollIntoView({ behavior: 'smooth' });
         }
 
+        function goToSubscribe(plan = 'pro') {
+            if (!currentUser) {
+                alert('请先登录后再订阅');
+                window.location.href = `auth.html?redirect=subscribe&plan=${plan}`;
+                return;
+            }
+            
+            // 检查是否已经是付费用户
+            if (currentUser.plan === plan) {
+                alert('您已经是' + (plan === 'pro' ? '专业版' : '企业版') + '用户了');
+                return;
+            }
+            
+            window.location.href = `subscribe.html?plan=${plan}`;
+        }
+
         // 初始化
-        updateUsageBadge();
+        initUser();
 
         // 文件选择
         const fileInput = document.getElementById('fileInput');
