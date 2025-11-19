@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebM 转 MP4 - 简单版</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 WebM 转 MP4 转换器</h1>
+            <p>浏览器端转换 - 无需上传</p>
+        </header>
+
+        <main>
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h2>选择 WebM 文件</h2>
+                    <input type="file" id="fileInput" accept=".webm,video/webm">
+                    <p class="file-info">支持最大 200MB 的 WebM 文件</p>
+                </div>
+                <button class="btn-convert" id="convertBtn" style="display: none; margin-top: 20px;">开始转换</button>
+            </div>
+
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <h3 id="statusText">正在加载...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+                <p id="progressText">请稍候</p>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <div class="success-icon">✓</div>
+                <h3>转换成功！</h3>
+                <button class="btn-download" id="downloadBtn">下载 MP4 文件</button>
+                <button class="btn-secondary" id="resetBtn">转换另一个文件</button>
+            </div>
+
+            <div class="error-section" id="errorSection" style="display: none;">
+                <div class="error-icon">✕</div>
+                <h3>转换失败</h3>
+                <p id="errorText"></p>
+                <button class="btn-secondary" id="retryBtn">重试</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script>
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        let ffmpeg = null;
+        let selectedFile = null;
+        let outputData = null;
+
+        const fileInput = document.getElementById('fileInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const uploadSection = document.getElementById('uploadSection');
+        const progressSection = document.getElementById('progressSection');
+        const resultSection = document.getElementById('resultSection');
+        const errorSection = document.getElementById('errorSection');
+        const statusText = document.getElementById('statusText');
+        const progressText = document.getElementById('progressText');
+        const progressBar = document.getElementById('progressBar');
+        const errorText = document.getElementById('errorText');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const retryBtn = document.getElementById('retryBtn');
+
+        fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                convertBtn.style.display = 'block';
+                console.log('文件已选择:', selectedFile.name);
+            }
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                alert('请先选择文件');
+                return;
+            }
+
+            uploadSection.style.display = 'none';
+            progressSection.style.display = 'block';
+            
+            try {
+                // 初始化 FFmpeg
+                if (!ffmpeg) {
+                    statusText.textContent = '正在加载转换工具...';
+                    progressText.textContent = '首次使用需要下载约 25MB';
+                    
+                    ffmpeg = createFFmpeg({
+                        log: true,
+                        progress: ({ ratio }) => {
+                            const percent = Math.round(ratio * 100);
+                            progressBar.style.width = percent + '%';
+                            progressText.textContent = `转换进度: ${percent}%`;
+                        }
+                    });
+                    
+                    await ffmpeg.load();
+                    console.log('FFmpeg 加载完成');
+                }
+
+                statusText.textContent = '正在转换视频...';
+                progressText.textContent = '请稍候';
+                progressBar.style.width = '0%';
+
+                // 写入输入文件
+                ffmpeg.FS('writeFile', 'input.webm', await fetchFile(selectedFile));
+                
+                // 执行转换
+                await ffmpeg.run('-i', 'input.webm', '-c:v', 'libx264', '-c:a', 'aac', 'output.mp4');
+                
+                // 读取输出文件
+                outputData = ffmpeg.FS('readFile', 'output.mp4');
+                
+                // 清理
+                ffmpeg.FS('unlink', 'input.webm');
+                ffmpeg.FS('unlink', 'output.mp4');
+                
+                // 显示成功
+                progressSection.style.display = 'none';
+                resultSection.style.display = 'block';
+                
+            } catch (error) {
+                console.error('转换失败:', error);
+                progressSection.style.display = 'none';
+                errorSection.style.display = 'block';
+                errorText.textContent = error.message || '未知错误';
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (outputData) {
+                const blob = new Blob([outputData.buffer], { type: 'video/mp4' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedFile.name.replace(/\.webm$/i, '.mp4');
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        function reset() {
+            selectedFile = null;
+            outputData = null;
+            fileInput.value = '';
+            convertBtn.style.display = 'none';
+            uploadSection.style.display = 'block';
+            progressSection.style.display = 'none';
+            resultSection.style.display = 'none';
+            errorSection.style.display = 'none';
+        }
+
+        resetBtn.addEventListener('click', reset);
+        retryBtn.addEventListener('click', reset);
+    </script>
+</body>
+</html>

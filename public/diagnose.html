@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg 诊断</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            line-height: 1.6;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        .log {
+            background: #252526;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .warning { color: #dcdcaa; }
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+            background: #252526;
+            color: #d4d4d4;
+            border: 1px solid #3e3e42;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 FFmpeg 详细诊断</h1>
+    
+    <div>
+        <input type="file" id="fileInput" accept=".webm">
+        <br>
+        <button onclick="diagnose()">开始诊断</button>
+        <button onclick="clearLog()">清除日志</button>
+    </div>
+    
+    <div id="log"></div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script>
+        const logDiv = document.getElementById('log');
+        const fileInput = document.getElementById('fileInput');
+        let ffmpeg = null;
+        let allLogs = [];
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            const fullMessage = `[${timestamp}] ${message}`;
+            div.textContent = fullMessage;
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            allLogs.push(fullMessage);
+            console.log(fullMessage);
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+            allLogs = [];
+        }
+
+        async function diagnose() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('请先选择文件');
+                return;
+            }
+
+            clearLog();
+            log('========================================', 'info');
+            log('开始详细诊断', 'info');
+            log('========================================', 'info');
+            log(`文件名: ${file.name}`, 'info');
+            log(`文件大小: ${file.size} 字节 (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'info');
+            log(`文件类型: ${file.type}`, 'info');
+
+            try {
+                // 加载 FFmpeg
+                if (!ffmpeg) {
+                    log('', 'info');
+                    log('步骤 1: 加载 FFmpeg', 'info');
+                    log('----------------------------------------', 'info');
+                    
+                    const { createFFmpeg, fetchFile } = FFmpeg;
+                    
+                    ffmpeg = createFFmpeg({
+                        log: true,
+                        logger: ({ type, message }) => {
+                            // 捕获所有 FFmpeg 日志
+                            log(`[FFmpeg ${type}] ${message}`, type === 'fferr' ? 'error' : 'info');
+                        },
+                        progress: ({ ratio }) => {
+                            const percent = Math.round(ratio * 100);
+                            log(`转换进度: ${percent}%`, 'info');
+                        }
+                    });
+                    
+                    await ffmpeg.load();
+                    log('✓ FFmpeg 加载成功', 'success');
+                }
+
+                // 写入文件
+                log('', 'info');
+                log('步骤 2: 写入输入文件', 'info');
+                log('----------------------------------------', 'info');
+                
+                const { fetchFile } = FFmpeg;
+                const inputData = await fetchFile(file);
+                log(`fetchFile 返回数据: ${inputData.length} 字节`, 'info');
+                
+                ffmpeg.FS('writeFile', 'input.webm', inputData);
+                log('✓ 文件写入虚拟文件系统', 'success');
+                
+                // 验证写入
+                const verifyInput = ffmpeg.FS('readFile', 'input.webm');
+                log(`验证读取: ${verifyInput.length} 字节`, verifyInput.length > 0 ? 'success' : 'error');
+                
+                // 列出文件系统
+                log('', 'info');
+                log('虚拟文件系统内容:', 'info');
+                try {
+                    const files = ffmpeg.FS('readdir', '/');
+                    files.forEach(f => log(`  - ${f}`, 'info'));
+                } catch (e) {
+                    log(`无法列出文件: ${e.message}`, 'warning');
+                }
+
+                // 尝试多种转换方法
+                const methods = [
+                    {
+                        name: '方法1: 直接复制流',
+                        args: ['-i', 'input.webm', '-c', 'copy', 'output1.mp4']
+                    },
+                    {
+                        name: '方法2: 重新编码（快速）',
+                        args: ['-i', 'input.webm', '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', 'output2.mp4']
+                    },
+                    {
+                        name: '方法3: VP8/VP9 转 H264',
+                        args: ['-i', 'input.webm', '-c:v', 'libx264', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', 'output3.mp4']
+                    }
+                ];
+
+                let successMethod = null;
+                let successData = null;
+
+                for (const method of methods) {
+                    log('', 'info');
+                    log(`步骤 3: 尝试 ${method.name}`, 'info');
+                    log('----------------------------------------', 'info');
+                    log(`命令: ffmpeg ${method.args.join(' ')}`, 'info');
+                    
+                    try {
+                        await ffmpeg.run(...method.args);
+                        log(`✓ ${method.name} 执行完成`, 'success');
+                        
+                        // 检查输出文件
+                        const outputFile = method.args[method.args.length - 1];
+                        try {
+                            const outputData = ffmpeg.FS('readFile', outputFile);
+                            log(`输出文件大小: ${outputData.length} 字节 (${(outputData.length / 1024 / 1024).toFixed(2)} MB)`, 
+                                outputData.length > 0 ? 'success' : 'error');
+                            
+                            if (outputData.length > 0) {
+                                // 检查文件头
+                                const header = Array.from(outputData.slice(0, 12))
+                                    .map(b => b.toString(16).padStart(2, '0'))
+                                    .join(' ');
+                                log(`文件头: ${header}`, 'info');
+                                
+                                const ftypPos = String.fromCharCode(...outputData.slice(4, 8));
+                                log(`ftyp 标识: ${ftypPos}`, ftypPos === 'ftyp' ? 'success' : 'warning');
+                                
+                                if (!successMethod) {
+                                    successMethod = method.name;
+                                    successData = outputData;
+                                    log(`✓ 找到有效的转换方法！`, 'success');
+                                }
+                            } else {
+                                log(`✗ 输出文件为空`, 'error');
+                            }
+                            
+                            // 清理
+                            ffmpeg.FS('unlink', outputFile);
+                            
+                        } catch (readError) {
+                            log(`✗ 无法读取输出文件: ${readError.message}`, 'error');
+                        }
+                        
+                    } catch (runError) {
+                        log(`✗ ${method.name} 失败: ${runError.message}`, 'error');
+                    }
+                    
+                    // 如果找到成功的方法，就不再尝试其他方法
+                    if (successMethod) break;
+                }
+
+                // 清理输入文件
+                ffmpeg.FS('unlink', 'input.webm');
+
+                // 总结
+                log('', 'info');
+                log('========================================', 'info');
+                log('诊断总结', 'info');
+                log('========================================', 'info');
+                
+                if (successMethod && successData) {
+                    log(`✓ 成功方法: ${successMethod}`, 'success');
+                    log(`✓ 输出大小: ${successData.length} 字节`, 'success');
+                    log('', 'info');
+                    log('尝试下载...', 'info');
+                    
+                    // 尝试下载
+                    const blob = new Blob([successData], { type: 'video/mp4' });
+                    log(`Blob 大小: ${blob.size} 字节`, blob.size > 0 ? 'success' : 'error');
+                    
+                    if (blob.size > 0) {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.name.replace(/\.webm$/i, '_converted.mp4');
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        log('✓ 下载已触发，请检查下载文件夹', 'success');
+                    } else {
+                        log('✗ Blob 创建失败', 'error');
+                    }
+                } else {
+                    log('✗ 所有转换方法都失败了', 'error');
+                    log('', 'info');
+                    log('可能的原因:', 'warning');
+                    log('1. WebM 文件损坏或格式不兼容', 'warning');
+                    log('2. FFmpeg.wasm 版本不支持该编解码器', 'warning');
+                    log('3. 浏览器内存不足', 'warning');
+                    log('', 'info');
+                    log('建议:', 'info');
+                    log('1. 尝试使用其他 WebM 文件', 'info');
+                    log('2. 使用服务器端转换（需要安装 FFmpeg）', 'info');
+                    log('3. 使用在线转换服务', 'info');
+                }
+
+                log('', 'info');
+                log('========================================', 'info');
+                log('诊断完成', 'info');
+                log('========================================', 'info');
+
+            } catch (error) {
+                log('', 'info');
+                log('========================================', 'error');
+                log('严重错误', 'error');
+                log('========================================', 'error');
+                log(`错误信息: ${error.message}`, 'error');
+                log(`错误堆栈: ${error.stack}`, 'error');
+                console.error(error);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            log('页面加载完成', 'success');
+            log(`FFmpeg 库: ${typeof FFmpeg !== 'undefined' ? '已加载' : '未加载'}`, 
+                typeof FFmpeg !== 'undefined' ? 'success' : 'error');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg 测试</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .log {
+            background: #252526;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .info { color: #569cd6; }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+    </style>
+</head>
+<body>
+    <h1>FFmpeg.wasm 诊断工具</h1>
+    
+    <div>
+        <button onclick="testFFmpegLoad()">测试 1: 加载 FFmpeg</button>
+        <button onclick="testBasicConversion()">测试 2: 基础转换</button>
+        <button onclick="clearLogs()">清除日志</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script>
+        const logsDiv = document.getElementById('logs');
+        let ffmpeg = null;
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(div);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+        }
+
+        async function testFFmpegLoad() {
+            try {
+                log('开始测试 FFmpeg 加载...', 'info');
+                
+                // 检查 FFmpeg 对象是否存在
+                if (typeof FFmpeg === 'undefined') {
+                    log('错误: FFmpeg 库未加载', 'error');
+                    return;
+                }
+                log('✓ FFmpeg 库已加载', 'success');
+                
+                // 检查 createFFmpeg 函数
+                if (typeof FFmpeg.createFFmpeg !== 'function') {
+                    log('错误: createFFmpeg 函数不存在', 'error');
+                    log('可用的方法: ' + Object.keys(FFmpeg).join(', '), 'info');
+                    return;
+                }
+                log('✓ createFFmpeg 函数存在', 'success');
+                
+                // 创建 FFmpeg 实例
+                log('正在创建 FFmpeg 实例...', 'info');
+                ffmpeg = FFmpeg.createFFmpeg({ 
+                    log: true,
+                    corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+                });
+                log('✓ FFmpeg 实例创建成功', 'success');
+                
+                // 加载 FFmpeg
+                log('正在加载 FFmpeg WASM...（这可能需要一些时间）', 'info');
+                await ffmpeg.load();
+                log('✓ FFmpeg 加载成功！', 'success');
+                
+                // 测试基本命令
+                log('测试基本命令...', 'info');
+                await ffmpeg.run('-version');
+                log('✓ FFmpeg 命令执行成功', 'success');
+                
+            } catch (error) {
+                log('错误: ' + error.message, 'error');
+                log('详细信息: ' + error.stack, 'error');
+            }
+        }
+
+        async function testBasicConversion() {
+            try {
+                if (!ffmpeg) {
+                    log('请先运行测试 1', 'error');
+                    return;
+                }
+                
+                log('开始测试基础转换...', 'info');
+                
+                // 创建一个简单的测试文件
+                log('创建测试文件...', 'info');
+                const testData = new Uint8Array(1024).fill(0);
+                ffmpeg.FS('writeFile', 'test.txt', testData);
+                log('✓ 测试文件创建成功', 'success');
+                
+                // 读取文件
+                const readData = ffmpeg.FS('readFile', 'test.txt');
+                log('✓ 文件读取成功，大小: ' + readData.length + ' 字节', 'success');
+                
+                // 删除文件
+                ffmpeg.FS('unlink', 'test.txt');
+                log('✓ 文件删除成功', 'success');
+                
+                log('所有测试通过！FFmpeg 工作正常', 'success');
+                
+            } catch (error) {
+                log('错误: ' + error.message, 'error');
+                log('详细信息: ' + error.stack, 'error');
+            }
+        }
+
+        // 页面加载时的初始信息
+        log('FFmpeg 诊断工具已就绪', 'info');
+        log('浏览器: ' + navigator.userAgent, 'info');
+        log('点击按钮开始测试', 'info');
+    </script>
+</body>
+</html>

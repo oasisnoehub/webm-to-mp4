@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebM 转 MP4 - 可用版</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .log-section {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .log-entry {
+            padding: 2px 0;
+            color: #666;
+        }
+        .log-entry.error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .log-entry.success {
+            color: #27ae60;
+        }
+        .log-entry.info {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 WebM 转 MP4 转换器</h1>
+            <p>基于诊断页面的可用版本</p>
+        </header>
+
+        <main>
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area">
+                    <h2>选择 WebM 文件</h2>
+                    <input type="file" id="fileInput" accept=".webm,video/webm" style="display: block; margin: 20px auto;">
+                    <p class="file-info" id="fileInfo">请选择文件</p>
+                </div>
+                <button class="btn-convert" id="convertBtn" style="display: none; margin-top: 20px;">开始转换</button>
+            </div>
+
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <h3 id="statusText">准备中...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+                </div>
+                <p id="progressText">请稍候</p>
+                <div class="log-section" id="logSection"></div>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <div class="success-icon">✓</div>
+                <h3>转换成功！</h3>
+                <p id="resultInfo"></p>
+                <button class="btn-download" id="downloadBtn">下载 MP4 文件</button>
+                <button class="btn-secondary" id="resetBtn">转换另一个文件</button>
+            </div>
+
+            <div class="error-section" id="errorSection" style="display: none;">
+                <div class="error-icon">✕</div>
+                <h3>转换失败</h3>
+                <p id="errorText"></p>
+                <button class="btn-secondary" id="retryBtn">重试</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script>
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        let ffmpeg = null;
+        let selectedFile = null;
+        let outputData = null;
+
+        const elements = {
+            fileInput: document.getElementById('fileInput'),
+            fileInfo: document.getElementById('fileInfo'),
+            convertBtn: document.getElementById('convertBtn'),
+            uploadSection: document.getElementById('uploadSection'),
+            progressSection: document.getElementById('progressSection'),
+            resultSection: document.getElementById('resultSection'),
+            errorSection: document.getElementById('errorSection'),
+            statusText: document.getElementById('statusText'),
+            progressText: document.getElementById('progressText'),
+            progressBar: document.getElementById('progressBar'),
+            errorText: document.getElementById('errorText'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            retryBtn: document.getElementById('retryBtn'),
+            logSection: document.getElementById('logSection'),
+            resultInfo: document.getElementById('resultInfo')
+        };
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            elements.logSection.appendChild(entry);
+            elements.logSection.scrollTop = elements.logSection.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        elements.fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+                elements.fileInfo.textContent = `已选择: ${selectedFile.name} (${sizeMB} MB)`;
+                elements.convertBtn.style.display = 'block';
+            }
+        });
+
+        elements.convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                alert('请先选择文件');
+                return;
+            }
+
+            elements.uploadSection.style.display = 'none';
+            elements.progressSection.style.display = 'block';
+            elements.logSection.innerHTML = '';
+            outputData = null;
+            
+            try {
+                addLog('开始转换流程', 'info');
+                
+                // 初始化 FFmpeg
+                if (!ffmpeg) {
+                    elements.statusText.textContent = '正在加载转换工具...';
+                    elements.progressText.textContent = '首次使用需要下载约 25MB';
+                    addLog('正在加载 FFmpeg...', 'info');
+                    
+                    ffmpeg = createFFmpeg({
+                        log: true,
+                        logger: ({ type, message }) => {
+                            // 只记录错误
+                            if (type === 'fferr' && message.includes('error')) {
+                                addLog(`FFmpeg: ${message}`, 'error');
+                            }
+                        },
+                        progress: ({ ratio }) => {
+                            const percent = Math.round(ratio * 100);
+                            elements.progressBar.style.width = percent + '%';
+                            elements.progressText.textContent = `转换进度: ${percent}%`;
+                        }
+                    });
+                    
+                    await ffmpeg.load();
+                    addLog('✓ FFmpeg 加载成功', 'success');
+                }
+
+                elements.statusText.textContent = '正在转换视频...';
+                elements.progressText.textContent = '请稍候';
+                elements.progressBar.style.width = '0%';
+                
+                // 写入输入文件
+                addLog('写入输入文件...', 'info');
+                const inputData = await fetchFile(selectedFile);
+                ffmpeg.FS('writeFile', 'input.webm', inputData);
+                addLog(`✓ 输入文件: ${inputData.length} 字节`, 'success');
+                
+                // 尝试转换方法（按优先级）
+                const methods = [
+                    {
+                        name: '快速转换',
+                        output: 'output1.mp4',
+                        args: ['-i', 'input.webm', '-c', 'copy', 'output1.mp4']
+                    },
+                    {
+                        name: '标准转换',
+                        output: 'output2.mp4',
+                        args: ['-i', 'input.webm', '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', 'output2.mp4']
+                    },
+                    {
+                        name: '兼容转换',
+                        output: 'output3.mp4',
+                        args: ['-i', 'input.webm', '-c:v', 'libx264', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', 'output3.mp4']
+                    }
+                ];
+
+                let success = false;
+                const startTime = Date.now();
+
+                for (const method of methods) {
+                    addLog(`尝试${method.name}...`, 'info');
+                    
+                    try {
+                        await ffmpeg.run(...method.args);
+                        
+                        // 检查输出
+                        const data = ffmpeg.FS('readFile', method.output);
+                        
+                        if (data && data.length > 0) {
+                            outputData = data;
+                            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                            const sizeMB = (data.length / 1024 / 1024).toFixed(2);
+                            
+                            addLog(`✓ ${method.name}成功！`, 'success');
+                            addLog(`输出大小: ${sizeMB} MB`, 'success');
+                            addLog(`耗时: ${duration} 秒`, 'info');
+                            
+                            // 清理
+                            ffmpeg.FS('unlink', method.output);
+                            success = true;
+                            break;
+                        } else {
+                            addLog(`${method.name}输出为空，尝试下一个方法`, 'info');
+                            try {
+                                ffmpeg.FS('unlink', method.output);
+                            } catch (e) {}
+                        }
+                        
+                    } catch (error) {
+                        addLog(`${method.name}失败: ${error.message}`, 'error');
+                        try {
+                            ffmpeg.FS('unlink', method.output);
+                        } catch (e) {}
+                    }
+                }
+
+                // 清理输入文件
+                ffmpeg.FS('unlink', 'input.webm');
+
+                if (success && outputData) {
+                    // 显示成功
+                    elements.progressSection.style.display = 'none';
+                    elements.resultSection.style.display = 'block';
+                    const sizeMB = (outputData.length / 1024 / 1024).toFixed(2);
+                    elements.resultInfo.textContent = `输出大小: ${sizeMB} MB`;
+                } else {
+                    throw new Error('所有转换方法都失败了');
+                }
+                
+            } catch (error) {
+                addLog(`错误: ${error.message}`, 'error');
+                console.error('详细错误:', error);
+                
+                elements.progressSection.style.display = 'none';
+                elements.errorSection.style.display = 'block';
+                elements.errorText.textContent = error.message;
+            }
+        });
+
+        elements.downloadBtn.addEventListener('click', () => {
+            if (!outputData) {
+                alert('没有可下载的文件');
+                return;
+            }
+            
+            try {
+                console.log('开始下载，数据大小:', outputData.length);
+                
+                // 创建 Blob
+                const blob = new Blob([outputData], { type: 'video/mp4' });
+                console.log('Blob 大小:', blob.size);
+                
+                if (blob.size === 0) {
+                    throw new Error('Blob 大小为 0');
+                }
+                
+                // 创建下载
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedFile.name.replace(/\.webm$/i, '.mp4');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 1000);
+                
+                console.log('下载已触发');
+                
+            } catch (error) {
+                alert('下载失败: ' + error.message);
+                console.error('下载错误:', error);
+            }
+        });
+
+        function reset() {
+            selectedFile = null;
+            outputData = null;
+            elements.fileInput.value = '';
+            elements.fileInfo.textContent = '请选择文件';
+            elements.convertBtn.style.display = 'none';
+            elements.uploadSection.style.display = 'block';
+            elements.progressSection.style.display = 'none';
+            elements.resultSection.style.display = 'none';
+            elements.errorSection.style.display = 'none';
+            elements.logSection.innerHTML = '';
+        }
+
+        elements.resetBtn.addEventListener('click', reset);
+        elements.retryBtn.addEventListener('click', reset);
+    </script>
+</body>
+</html>

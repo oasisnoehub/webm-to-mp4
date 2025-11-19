@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载测试</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        .log {
+            background: #252526;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+            background: #252526;
+            color: #d4d4d4;
+            border: 1px solid #3e3e42;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 FFmpeg 下载测试</h1>
+    <p>这个页面会测试 FFmpeg 转换和下载的每一步</p>
+    
+    <div>
+        <input type="file" id="fileInput" accept=".webm">
+        <br>
+        <button onclick="testConversion()">开始完整测试</button>
+        <button onclick="clearLog()">清除日志</button>
+    </div>
+    
+    <div id="log"></div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script>
+        const logDiv = document.getElementById('log');
+        const fileInput = document.getElementById('fileInput');
+        let ffmpeg = null;
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(div);
+            console.log(message);
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+
+        async function testConversion() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('请先选择文件');
+                return;
+            }
+
+            clearLog();
+            log('========== 开始测试 ==========', 'info');
+            log(`选择的文件: ${file.name}`, 'info');
+            log(`文件大小: ${(file.size / 1024 / 1024).toFixed(2)} MB`, 'info');
+            log(`文件类型: ${file.type}`, 'info');
+
+            try {
+                // 步骤 1: 加载 FFmpeg
+                if (!ffmpeg) {
+                    log('步骤 1: 加载 FFmpeg...', 'info');
+                    const { createFFmpeg, fetchFile } = FFmpeg;
+                    
+                    ffmpeg = createFFmpeg({
+                        log: true,
+                        progress: ({ ratio }) => {
+                            const percent = Math.round(ratio * 100);
+                            if (percent % 20 === 0) {
+                                log(`转换进度: ${percent}%`, 'info');
+                            }
+                        }
+                    });
+                    
+                    await ffmpeg.load();
+                    log('✓ FFmpeg 加载成功', 'success');
+                }
+
+                // 步骤 2: 写入文件
+                log('步骤 2: 写入输入文件...', 'info');
+                const { fetchFile } = FFmpeg;
+                ffmpeg.FS('writeFile', 'input.webm', await fetchFile(file));
+                log('✓ 文件写入成功', 'success');
+
+                // 验证文件
+                const inputData = ffmpeg.FS('readFile', 'input.webm');
+                log(`验证输入文件: ${inputData.length} 字节`, 'info');
+
+                // 步骤 3: 转换
+                log('步骤 3: 开始转换...', 'info');
+                await ffmpeg.run(
+                    '-i', 'input.webm',
+                    '-c:v', 'libx264',
+                    '-preset', 'ultrafast',
+                    '-c:a', 'aac',
+                    'output.mp4'
+                );
+                log('✓ 转换完成', 'success');
+
+                // 步骤 4: 读取输出
+                log('步骤 4: 读取输出文件...', 'info');
+                const data = ffmpeg.FS('readFile', 'output.mp4');
+                
+                log(`输出数据类型: ${data.constructor.name}`, 'info');
+                log(`输出数据长度: ${data.length} 字节`, 'info');
+                log(`输出数据大小: ${(data.length / 1024 / 1024).toFixed(2)} MB`, 'info');
+                
+                if (data.length === 0) {
+                    throw new Error('输出文件为空！');
+                }
+                log('✓ 输出文件读取成功', 'success');
+
+                // 步骤 5: 测试不同的下载方法
+                log('步骤 5: 测试下载方法...', 'info');
+                
+                // 方法 1: 直接使用 data
+                log('测试方法 1: new Blob([data])', 'info');
+                const blob1 = new Blob([data], { type: 'video/mp4' });
+                log(`Blob1 大小: ${blob1.size} 字节`, blob1.size > 0 ? 'success' : 'error');
+                
+                // 方法 2: 使用 data.buffer
+                log('测试方法 2: new Blob([data.buffer])', 'info');
+                const blob2 = new Blob([data.buffer], { type: 'video/mp4' });
+                log(`Blob2 大小: ${blob2.size} 字节`, blob2.size > 0 ? 'success' : 'error');
+                
+                // 方法 3: 使用 new Uint8Array
+                log('测试方法 3: new Blob([new Uint8Array(data)])', 'info');
+                const blob3 = new Blob([new Uint8Array(data)], { type: 'video/mp4' });
+                log(`Blob3 大小: ${blob3.size} 字节`, blob3.size > 0 ? 'success' : 'error');
+
+                // 选择最大的 blob
+                const blobs = [
+                    { blob: blob1, name: '方法1', size: blob1.size },
+                    { blob: blob2, name: '方法2', size: blob2.size },
+                    { blob: blob3, name: '方法3', size: blob3.size }
+                ];
+                
+                blobs.sort((a, b) => b.size - a.size);
+                const best = blobs[0];
+                
+                log(`最佳方法: ${best.name}, 大小: ${best.size} 字节`, 'success');
+
+                // 步骤 6: 下载
+                log('步骤 6: 开始下载...', 'info');
+                const url = URL.createObjectURL(best.blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name.replace(/\.webm$/i, '.mp4');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 1000);
+                
+                log('✓ 下载触发成功', 'success');
+                log(`下载文件名: ${a.download}`, 'info');
+                log('========== 测试完成 ==========', 'success');
+                log('请检查下载的文件是否正常', 'info');
+
+                // 清理
+                ffmpeg.FS('unlink', 'input.webm');
+                ffmpeg.FS('unlink', 'output.mp4');
+
+            } catch (error) {
+                log('========== 错误 ==========', 'error');
+                log(`错误信息: ${error.message}`, 'error');
+                log(`错误堆栈: ${error.stack}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // 页面加载检查
+        window.addEventListener('load', () => {
+            log('页面加载完成', 'success');
+            log(`FFmpeg 库: ${typeof FFmpeg !== 'undefined' ? '已加载' : '未加载'}`, 
+                typeof FFmpeg !== 'undefined' ? 'success' : 'error');
+        });
+    </script>
+</body>
+</html>

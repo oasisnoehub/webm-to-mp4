@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试信息</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            line-height: 1.6;
+        }
+        .section {
+            background: #252526;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007acc;
+        }
+        h2 {
+            color: #4ec9b0;
+            margin-top: 0;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .warning { color: #dcdcaa; }
+        .info { color: #569cd6; }
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 系统诊断信息</h1>
+    
+    <div class="section">
+        <h2>浏览器信息</h2>
+        <div id="browserInfo"></div>
+    </div>
+    
+    <div class="section">
+        <h2>功能支持检测</h2>
+        <div id="featureSupport"></div>
+    </div>
+    
+    <div class="section">
+        <h2>网络连接测试</h2>
+        <button onclick="testCDN()">测试 CDN 连接</button>
+        <div id="networkTest"></div>
+    </div>
+    
+    <div class="section">
+        <h2>FFmpeg 库测试</h2>
+        <button onclick="testFFmpegLibrary()">测试 FFmpeg 库</button>
+        <div id="ffmpegTest"></div>
+    </div>
+
+    <script>
+        // 浏览器信息
+        const browserInfo = document.getElementById('browserInfo');
+        browserInfo.innerHTML = `
+            <pre>
+用户代理: ${navigator.userAgent}
+平台: ${navigator.platform}
+语言: ${navigator.language}
+在线状态: ${navigator.onLine ? '✓ 在线' : '✗ 离线'}
+Cookie 启用: ${navigator.cookieEnabled ? '✓ 是' : '✗ 否'}
+            </pre>
+        `;
+
+        // 功能支持检测
+        const featureSupport = document.getElementById('featureSupport');
+        const features = {
+            'WebAssembly': typeof WebAssembly !== 'undefined',
+            'SharedArrayBuffer': typeof SharedArrayBuffer !== 'undefined',
+            'Worker': typeof Worker !== 'undefined',
+            'Blob': typeof Blob !== 'undefined',
+            'FileReader': typeof FileReader !== 'undefined',
+            'fetch API': typeof fetch !== 'undefined',
+            'Promise': typeof Promise !== 'undefined',
+            'async/await': (async () => {})().constructor.name === 'Promise'
+        };
+
+        let featuresHTML = '<pre>';
+        for (const [feature, supported] of Object.entries(features)) {
+            const status = supported ? '<span class="success">✓ 支持</span>' : '<span class="error">✗ 不支持</span>';
+            featuresHTML += `${feature.padEnd(20)}: ${status}\n`;
+        }
+        featuresHTML += '</pre>';
+        featureSupport.innerHTML = featuresHTML;
+
+        // 检查关键问题
+        if (!features['SharedArrayBuffer']) {
+            featureSupport.innerHTML += '<p class="error">⚠️ 警告: SharedArrayBuffer 不可用！这是 FFmpeg.wasm 必需的功能。</p>';
+            featureSupport.innerHTML += '<p class="warning">可能原因：</p>';
+            featureSupport.innerHTML += '<ul><li>浏览器版本太旧</li><li>CORS 头部未正确设置</li><li>不安全的上下文（非 HTTPS）</li></ul>';
+        }
+
+        // 测试 CDN 连接
+        async function testCDN() {
+            const networkTest = document.getElementById('networkTest');
+            networkTest.innerHTML = '<p class="info">正在测试...</p>';
+            
+            const cdns = [
+                'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js',
+                'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+                'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.wasm'
+            ];
+            
+            let results = '<pre>';
+            for (const url of cdns) {
+                try {
+                    const start = Date.now();
+                    const response = await fetch(url, { method: 'HEAD' });
+                    const time = Date.now() - start;
+                    const status = response.ok ? 
+                        `<span class="success">✓ 可访问 (${time}ms)</span>` : 
+                        `<span class="error">✗ 失败 (${response.status})</span>`;
+                    results += `${url}\n${status}\n\n`;
+                } catch (error) {
+                    results += `${url}\n<span class="error">✗ 错误: ${error.message}</span>\n\n`;
+                }
+            }
+            results += '</pre>';
+            networkTest.innerHTML = results;
+        }
+
+        // 测试 FFmpeg 库
+        async function testFFmpegLibrary() {
+            const ffmpegTest = document.getElementById('ffmpegTest');
+            ffmpegTest.innerHTML = '<p class="info">正在加载 FFmpeg 库...</p>';
+            
+            try {
+                // 动态加载 FFmpeg 库
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
+                
+                script.onload = () => {
+                    let result = '<pre>';
+                    result += '<span class="success">✓ FFmpeg 库加载成功</span>\n\n';
+                    
+                    if (typeof FFmpeg !== 'undefined') {
+                        result += '<span class="success">✓ FFmpeg 对象存在</span>\n';
+                        result += `可用方法: ${Object.keys(FFmpeg).join(', ')}\n`;
+                        
+                        if (typeof FFmpeg.createFFmpeg === 'function') {
+                            result += '<span class="success">✓ createFFmpeg 函数可用</span>\n';
+                        } else {
+                            result += '<span class="error">✗ createFFmpeg 函数不存在</span>\n';
+                        }
+                        
+                        if (typeof FFmpeg.fetchFile === 'function') {
+                            result += '<span class="success">✓ fetchFile 函数可用</span>\n';
+                        } else {
+                            result += '<span class="error">✗ fetchFile 函数不存在</span>\n';
+                        }
+                    } else {
+                        result += '<span class="error">✗ FFmpeg 对象不存在</span>\n';
+                    }
+                    
+                    result += '</pre>';
+                    ffmpegTest.innerHTML = result;
+                };
+                
+                script.onerror = (error) => {
+                    ffmpegTest.innerHTML = `<p class="error">✗ 加载失败: ${error}</p>`;
+                };
+                
+                document.head.appendChild(script);
+                
+            } catch (error) {
+                ffmpegTest.innerHTML = `<p class="error">✗ 错误: ${error.message}</p>`;
+            }
+        }
+
+        // 检查 CORS 头部
+        fetch(window.location.href)
+            .then(response => {
+                const headers = {
+                    'Cross-Origin-Opener-Policy': response.headers.get('Cross-Origin-Opener-Policy'),
+                    'Cross-Origin-Embedder-Policy': response.headers.get('Cross-Origin-Embedder-Policy')
+                };
+                
+                const section = document.createElement('div');
+                section.className = 'section';
+                section.innerHTML = '<h2>CORS 头部检查</h2><pre>' + 
+                    JSON.stringify(headers, null, 2) + '</pre>';
+                
+                if (headers['Cross-Origin-Opener-Policy'] === 'same-origin' && 
+                    headers['Cross-Origin-Embedder-Policy'] === 'require-corp') {
+                    section.innerHTML += '<p class="success">✓ CORS 头部配置正确</p>';
+                } else {
+                    section.innerHTML += '<p class="error">✗ CORS 头部配置不正确，SharedArrayBuffer 可能不可用</p>';
+                }
+                
+                document.body.appendChild(section);
+            });
+    </script>
+</body>
+</html>

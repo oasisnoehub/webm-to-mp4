@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebM 转 MP4 转换器（浏览器版）</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 WebM 转 MP4 转换器</h1>
+            <p>快速将您的 WebM 视频转换为 MP4 格式（浏览器端处理）</p>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h2>拖放 WebM 文件到这里</h2>
+                    <p>或者</p>
+                    <button class="btn-primary" id="selectFileBtn">选择文件</button>
+                    <input type="file" id="fileInput" accept=".webm,video/webm" hidden>
+                    <p class="file-info">支持最大 500MB 的 WebM 文件 | 完全在浏览器中处理</p>
+                </div>
+
+                <div class="file-selected" id="fileSelected" style="display: none;">
+                    <div class="file-info-box">
+                        <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <div class="file-details">
+                            <p class="file-name" id="fileName"></p>
+                            <p class="file-size" id="fileSize"></p>
+                        </div>
+                        <button class="btn-remove" id="removeFileBtn">✕</button>
+                    </div>
+                    <button class="btn-convert" id="convertBtn">开始转换</button>
+                </div>
+            </div>
+
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <h3 id="progressTitle">正在加载转换工具...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p class="progress-text" id="progressText">请稍候</p>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <div class="success-icon">✓</div>
+                <h3>转换成功！</h3>
+                <p>您的 MP4 文件已准备好下载</p>
+                <button class="btn-download" id="downloadBtn">下载 MP4 文件</button>
+                <button class="btn-secondary" id="convertAnotherBtn">转换另一个文件</button>
+            </div>
+
+            <div class="error-section" id="errorSection" style="display: none;">
+                <div class="error-icon">✕</div>
+                <h3>转换失败</h3>
+                <p id="errorMessage"></p>
+                <button class="btn-secondary" id="tryAgainBtn">重试</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2024 WebM 转 MP4 转换器 | 完全在浏览器中处理，无需上传</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script src="script-browser.js"></script>
+</body>
+</html>
