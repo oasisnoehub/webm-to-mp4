@@ -1,0 +1,41 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# 临时文件
+uploads/*
+output/*
+*.log
+
+# Git
+.git
+.gitignore
+
+# 文档
+*.md
+!README.md
+
+# 开发文件
+.env.local
+.env.development
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# 测试文件
+test
+tests
+*.test.js
+*.spec.js
+
+# 其他
+.editorconfig
+.eslintrc
+.prettierrc

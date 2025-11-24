@@ -46,9 +46,28 @@
 - **文件上传**: Multer
 - **前端**: 原生 HTML/CSS/JavaScript
 
-## 安装步骤
+## 🚀 快速开始
 
-### 1. 安装 FFmpeg
+### 方式 1: Docker 部署（推荐）
+
+```bash
+# 1. 克隆项目
+git clone <your-repo-url>
+cd videoconvert
+
+# 2. 快速启动
+./start.sh
+
+# 或者使用 Docker Compose
+docker compose up -d
+
+# 3. 访问应用
+# http://localhost:3000
+```
+
+### 方式 2: 本地开发
+
+#### 1. 安装 FFmpeg（仅服务器版需要）
 
 **macOS:**
 ```bash
@@ -64,25 +83,48 @@ sudo apt install ffmpeg
 **Windows:**
 从 [FFmpeg 官网](https://ffmpeg.org/download.html) 下载并安装
 
-### 2. 安装项目依赖
+#### 2. 安装项目依赖
 
 ```bash
 npm install
 ```
 
-## 运行应用
+#### 3. 运行应用
 
-### 开发模式
+**开发模式:**
 ```bash
 npm run dev
 ```
 
-### 生产模式
+**生产模式:**
 ```bash
 npm start
 ```
 
 应用将在 `http://localhost:3000` 启动
+
+## 🐳 Docker 部署
+
+### 使用 Makefile（推荐）
+
+```bash
+# 查看所有命令
+make help
+
+# 构建并启动
+make build
+make up
+
+# 查看日志
+make logs
+
+# 停止服务
+make down
+```
+
+### 详细部署文档
+
+查看 [DEPLOYMENT.md](DEPLOYMENT.md) 获取完整的 Docker 部署指南
 
 ## 快速开始 - 浏览器版（推荐）
 
