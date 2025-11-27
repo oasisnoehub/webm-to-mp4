@@ -1,0 +1,201 @@
+========================================
+🐳 Docker 快速参考
+========================================
+
+📦 推荐的部署文件
+========================================
+
+新手推荐:
+  Dockerfile: Dockerfile.fixed
+  Compose: docker-compose.simple.yml
+
+生产环境:
+  Dockerfile: Dockerfile.fixed
+  Compose: docker-compose.full.yml
+
+========================================
+快速命令
+========================================
+
+一键部署:
+  ./docker-deploy.sh
+
+简单部署（仅应用）:
+  docker-compose -f docker-compose.simple.yml up -d
+
+完整部署（应用+Redis+Nginx）:
+  docker-compose -f docker-compose.full.yml up -d
+
+查看状态:
+  docker-compose -f docker-compose.simple.yml ps
+
+查看日志:
+  docker-compose -f docker-compose.simple.yml logs -f
+
+停止服务:
+  docker-compose -f docker-compose.simple.yml down
+
+重启服务:
+  docker-compose -f docker-compose.simple.yml restart
+
+重新构建:
+  docker-compose -f docker-compose.simple.yml up -d --build
+
+========================================
+访问地址
+========================================
+
+简单部署:
+  http://localhost:3000
+
+完整部署:
+  http://localhost (通过 Nginx)
+  http://localhost:3000 (直接访问)
+
+健康检查:
+  http://localhost:3000/api/health
+
+========================================
+故障排查
+========================================
+
+问题 1: 构建失败
+解决: docker-compose -f docker-compose.simple.yml build --no-cache
+
+问题 2: 端口被占用
+解决: 修改 docker-compose.yml 中的端口
+      ports:
+        - "3001:3000"
+
+问题 3: 无法访问
+解决: 
+  1. docker ps | grep videoconvert
+  2. docker logs videoconvert-app
+  3. curl http://localhost:3000/api/health
+
+问题 4: 权限错误
+解决: chmod 777 uploads output temp logs
+
+========================================
+文件说明
+========================================
+
+Dockerfile.fixed
+  - 简化版 Dockerfile
+  - 包含 FFmpeg
+  - 易于构建
+  - 推荐使用 ⭐⭐⭐⭐⭐
+
+docker-compose.simple.yml
+  - 最简单的配置
+  - 仅包含应用
+  - 适合开发和测试
+  - 推荐新手使用 ⭐⭐⭐⭐⭐
+
+docker-compose.full.yml
+  - 完整配置
+  - 包含应用、Redis、Nginx
+  - 适合生产环境
+  - 推荐生产使用 ⭐⭐⭐⭐
+
+nginx.simple.conf
+  - 简化的 Nginx 配置
+  - 包含必要的代理设置
+  - 支持 FFmpeg.wasm
+
+========================================
+常见操作
+========================================
+
+进入容器:
+  docker exec -it videoconvert-app sh
+
+查看容器日志:
+  docker logs -f videoconvert-app
+
+检查健康状态:
+  docker inspect videoconvert-app | grep Health
+
+清理所有容器:
+  docker-compose -f docker-compose.simple.yml down -v
+
+删除镜像:
+  docker rmi videoconvert:latest
+
+清理系统:
+  docker system prune -a
+
+========================================
+性能优化
+========================================
+
+1. 使用 Redis 缓存:
+   docker-compose -f docker-compose.full.yml up -d
+
+2. 限制资源:
+   在 docker-compose.yml 中添加:
+   deploy:
+     resources:
+       limits:
+         cpus: '2'
+         memory: 2G
+
+3. 启用日志轮转:
+   logging:
+     driver: "json-file"
+     options:
+       max-size: "10m"
+       max-file: "3"
+
+========================================
+备份和恢复
+========================================
+
+备份数据:
+  tar -czf backup.tar.gz uploads/ output/
+
+恢复数据:
+  tar -xzf backup.tar.gz
+
+备份 Redis:
+  docker exec videoconvert-redis redis-cli SAVE
+  docker cp videoconvert-redis:/data/dump.rdb ./backup.rdb
+
+========================================
+监控
+========================================
+
+查看资源使用:
+  docker stats videoconvert-app
+
+查看容器进程:
+  docker top videoconvert-app
+
+查看容器详情:
+  docker inspect videoconvert-app
+
+========================================
+更多信息
+========================================
+
+详细文档:
+  📖 DOCKER_部署指南.md
+  📖 PRODUCTION_DEPLOYMENT.md
+  📖 生产级SaaS完成.md
+
+快速启动:
+  📄 快速启动指南.txt
+
+部署脚本:
+  🚀 ./docker-deploy.sh
+
+========================================
+
+推荐流程:
+1. 运行 ./docker-deploy.sh
+2. 选择 "简单部署"
+3. 访问 http://localhost:3000
+4. 测试功能
+5. 如需生产部署，选择 "完整部署"
+
+========================================
