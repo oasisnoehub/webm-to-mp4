@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebM 转 MP4 转换器（无多线程版）</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 WebM 转 MP4 转换器</h1>
+            <p>快速将您的 WebM 视频转换为 MP4 格式（兼容版）</p>
+            <p style="color: #f39c12; font-size: 0.9rem;">⚠️ 此版本不需要 SharedArrayBuffer，适用于所有环境</p>
+        </header>
+
+        <main>
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h2>拖放 WebM 文件到这里</h2>
+                    <p>或者</p>
+                    <button class="btn-primary" id="selectFileBtn">选择文件</button>
+                    <input type="file" id="fileInput" accept=".webm,video/webm" hidden>
+                    <p class="file-info">支持最大 200MB 的 WebM 文件</p>
+                </div>
+
+                <div class="file-selected" id="fileSelected" style="display: none;">
+                    <div class="file-info-box">
+                        <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <div class="file-details">
+                            <p class="file-name" id="fileName"></p>
+                            <p class="file-size" id="fileSize"></p>
+                        </div>
+                        <button class="btn-remove" id="removeFileBtn">✕</button>
+                    </div>
+                    <button class="btn-convert" id="convertBtn">开始转换</button>
+                </div>
+            </div>
+
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <h3 id="progressTitle">正在加载转换工具...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p class="progress-text" id="progressText">请稍候</p>
+                <div class="log-section" id="logSection" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; text-align: left;"></div>
+            </div>
+
+            <div class="result-section" id="resultSection" style="display: none;">
+                <div class="success-icon">✓</div>
+                <h3>转换成功！</h3>
+                <p>您的 MP4 文件已准备好下载</p>
+                <button class="btn-download" id="downloadBtn">下载 MP4 文件</button>
+                <button class="btn-secondary" id="convertAnotherBtn">转换另一个文件</button>
+            </div>
+
+            <div class="error-section" id="errorSection" style="display: none;">
+                <div class="error-icon">✕</div>
+                <h3>转换失败</h3>
+                <p id="errorMessage"></p>
+                <button class="btn-secondary" id="tryAgainBtn">重试</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2024 WebM 转 MP4 转换器 | 兼容版（无需 SharedArrayBuffer）</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
+    <script>
+        let selectedFile = null;
+        let ffmpeg = null;
+        let ffmpegLoaded = false;
+        let convertedBlob = null;
+        let isConverting = false;
+
+        // DOM 元素
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        const fileSelected = document.getElementById('fileSelected');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const removeFileBtn = document.getElementById('removeFileBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressTitle = document.getElementById('progressTitle');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const logSection = document.getElementById('logSection');
+        const resultSection = document.getElementById('resultSection');
+        const errorSection = document.getElementById('errorSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const convertAnotherBtn = document.getElementById('convertAnotherBtn');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        function addLog(msg, type = 'info') {
+            const entry = document.createElement('div');
+            entry.style.padding = '2px 0';
+            entry.style.color = type === 'error' ? '#e74c3c' : type === 'success' ? '#27ae60' : '#666';
+            if (type === 'error') entry.style.fontWeight = 'bold';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logSection.appendChild(entry);
+            logSection.scrollTop = logSection.scrollHeight;
+            console.log(msg);
+        }
+
+        // 初始化 FFmpeg（使用不需要 SharedArrayBuffer 的版本）
+        async function loadFFmpeg() {
+            if (ffmpegLoaded) return true;
+            
+            try {
+                addLog('开始加载 FFmpeg（兼容版）...');
+                
+                const { createFFmpeg, fetchFile } = FFmpeg;
+                
+                // 使用单线程模式，不需要 SharedArrayBuffer
+                ffmpeg = createFFmpeg({ 
+                    log: true,
+                    logger: ({ type, message }) => {
+                        if (type === 'fferr' && message.includes('error')) {
+                            addLog(`FFmpeg: ${message}`, 'error');
+                        }
+                    },
+                    progress: ({ ratio }) => {
+                        const percent = Math.round(ratio * 100);
+                        progressFill.style.width = percent + '%';
+                        progressText.textContent = `转换进度: ${percent}%`;
+                    },
+                    corePath: 'https://unpkg.com/@ffmpeg/core@0.10.0/dist/ffmpeg-core.js'
+                });
+                
+                progressTitle.textContent = '正在加载转换工具...';
+                progressText.textContent = '首次使用需要下载约 25MB 的转换工具';
+                
+                await ffmpeg.load();
+                
+                ffmpegLoaded = true;
+                addLog('✓ FFmpeg 加载成功', 'success');
+                return true;
+            } catch (error) {
+                addLog('FFmpeg 加载失败: ' + error.message, 'error');
+                console.error('FFmpeg 加载失败:', error);
+                ffmpegLoaded = false;
+                ffmpeg = null;
+                return false;
+            }
+        }
+
+        // 点击选择文件
+        selectFileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea || e.target.closest('.upload-area')) {
+                fileInput.click();
+            }
+        });
+
+        // 文件选择
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // 拖放功能
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        // 处理文件
+        function handleFile(file) {
+            if (!file) return;
+            
+            const fileNameLower = file.name.toLowerCase();
+            if (!file.type.includes('webm') && !fileNameLower.endsWith('.webm')) {
+                alert('请选择 WebM 格式的视频文件');
+                return;
+            }
+            
+            if (file.size > 200 * 1024 * 1024) {
+                alert('文件大小不能超过 200MB');
+                return;
+            }
+            
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            
+            uploadArea.style.display = 'none';
+            fileSelected.style.display = 'block';
+        }
+
+        // 移除文件
+        removeFileBtn.addEventListener('click', () => {
+            resetUpload();
+        });
+
+        // 开始转换
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                alert('请先选择文件');
+                return;
+            }
+            
+            if (isConverting) {
+                alert('转换正在进行中，请稍候...');
+                return;
+            }
+            
+            isConverting = true;
+            convertBtn.disabled = true;
+            convertBtn.style.opacity = '0.6';
+            
+            fileSelected.style.display = 'none';
+            progressSection.style.display = 'block';
+            progressFill.style.width = '0%';
+            logSection.innerHTML = '';
+            
+            try {
+                addLog('开始转换流程');
+                
+                // 加载 FFmpeg
+                if (!ffmpegLoaded) {
+                    const loaded = await loadFFmpeg();
+                    if (!loaded) {
+                        throw new Error('无法加载转换工具，请刷新页面重试');
+                    }
+                }
+                
+                progressTitle.textContent = '正在转换...';
+                progressText.textContent = '正在处理您的视频';
+                
+                const inputFileName = 'input.webm';
+                const outputFileName = 'output.mp4';
+                
+                // 写入文件
+                addLog('写入输入文件...');
+                const inputData = await FFmpeg.fetchFile(selectedFile);
+                ffmpeg.FS('writeFile', inputFileName, inputData);
+                addLog(`✓ 输入文件写入成功: ${inputData.length} 字节`, 'success');
+                
+                // 尝试多种转换方法
+                const methods = [
+                    {
+                        name: '快速转换',
+                        args: ['-i', inputFileName, '-c', 'copy', outputFileName]
+                    },
+                    {
+                        name: '标准转换',
+                        args: ['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', outputFileName]
+                    },
+                    {
+                        name: '兼容转换',
+                        args: ['-i', inputFileName, '-c:v', 'libx264', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', outputFileName]
+                    }
+                ];
+                
+                let success = false;
+                let data = null;
+                
+                for (const method of methods) {
+                    addLog(`尝试${method.name}...`);
+                    progressText.textContent = `正在尝试${method.name}...`;
+                    
+                    try {
+                        await ffmpeg.run(...method.args);
+                        data = ffmpeg.FS('readFile', outputFileName);
+                        
+                        if (data && data.length > 0) {
+                            addLog(`✓ ${method.name}成功！输出大小: ${(data.length / 1024 / 1024).toFixed(2)} MB`, 'success');
+                            success = true;
+                            
+                            try {
+                                ffmpeg.FS('unlink', outputFileName);
+                            } catch (e) {}
+                            break;
+                        }
+                    } catch (error) {
+                        addLog(`${method.name}失败: ${error.message}`, 'error');
+                    }
+                }
+                
+                // 清理
+                try {
+                    ffmpeg.FS('unlink', inputFileName);
+                } catch (e) {}
+                
+                if (success && data) {
+                    convertedBlob = new Blob([data.buffer], { type: 'video/mp4' });
+                    addLog('✓ 转换完成！', 'success');
+                    showResult();
+                } else {
+                    throw new Error('所有转换方法都失败了');
+                }
+                
+            } catch (error) {
+                addLog('错误: ' + error.message, 'error');
+                console.error('转换错误:', error);
+                showError('转换失败: ' + error.message);
+                ffmpegLoaded = false;
+                ffmpeg = null;
+            } finally {
+                isConverting = false;
+                convertBtn.disabled = false;
+                convertBtn.style.opacity = '1';
+            }
+        });
+
+        // 下载文件
+        downloadBtn.addEventListener('click', () => {
+            if (convertedBlob) {
+                const url = URL.createObjectURL(convertedBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedFile.name.replace(/\.webm$/i, '.mp4');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        // 转换另一个文件
+        convertAnotherBtn.addEventListener('click', () => {
+            resetUpload();
+        });
+
+        // 重试
+        tryAgainBtn.addEventListener('click', () => {
+            resetUpload();
+        });
+
+        // 显示结果
+        function showResult() {
+            progressSection.style.display = 'none';
+            resultSection.style.display = 'block';
+        }
+
+        // 显示错误
+        function showError(message) {
+            progressSection.style.display = 'none';
+            errorSection.style.display = 'block';
+            errorMessage.textContent = message;
+        }
+
+        // 重置上传
+        function resetUpload() {
+            selectedFile = null;
+            convertedBlob = null;
+            fileInput.value = '';
+            
+            uploadArea.style.display = 'block';
+            fileSelected.style.display = 'none';
+            progressSection.style.display = 'none';
+            resultSection.style.display = 'none';
+            errorSection.style.display = 'none';
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 预加载
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (!ffmpegLoaded && !isConverting) {
+                    console.log('开始预加载 FFmpeg...');
+                    loadFFmpeg().catch(e => console.warn('预加载失败:', e));
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

@@ -14,8 +14,18 @@ app.use(express.json());
 
 // 添加必要的头部以支持 SharedArrayBuffer（FFmpeg.wasm 需要）
 app.use((req, res, next) => {
+  // 设置 COOP 和 COEP 头部
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  
+  // 允许跨域资源共享（用于 CDN 资源）
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  
+  // 缓存控制
+  if (req.url.includes('.wasm') || req.url.includes('ffmpeg')) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+  }
+  
   next();
 });
 

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择转换器版本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-icon {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-badge {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .badge-recommended {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .badge-compatible {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .card-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-features li {
+            padding: 0.5rem 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-features li:before {
+            content: "✓";
+            margin-right: 0.5rem;
+            color: #2ecc71;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .card-features li.warning:before {
+            content: "⚠";
+            color: #f39c12;
+        }
+
+        .card-button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .card-button:hover {
+            transform: scale(1.05);
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .info-box a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .info-box a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 WebM 转 MP4 转换器</h1>
+        <p class="subtitle">选择适合您的版本</p>
+
+        <div class="cards">
+            <!-- 标准版 -->
+            <a href="index-browser.html" class="card">
+                <div class="card-icon">🚀</div>
+                <h2 class="card-title">标准版</h2>
+                <div class="card-badge badge-recommended">推荐 - 本地开发</div>
+                <p class="card-description">
+                    使用最新的 FFmpeg.wasm 技术，支持多线程处理，性能更好。
+                </p>
+                <ul class="card-features">
+                    <li>多线程支持</li>
+                    <li>转换速度更快</li>
+                    <li>支持更大文件（500MB）</li>
+                    <li class="warning">需要 localhost 或 HTTPS</li>
+                </ul>
+                <button class="card-button">使用标准版</button>
+            </a>
+
+            <!-- 兼容版 -->
+            <a href="converter-no-threads.html" class="card">
+                <div class="card-icon">🌐</div>
+                <h2 class="card-title">兼容版</h2>
+                <div class="card-badge badge-compatible">推荐 - 生产环境</div>
+                <p class="card-description">
+                    兼容所有环境，无需特殊配置，适合通过 IP 地址或 HTTP 访问。
+                </p>
+                <ul class="card-features">
+                    <li>支持所有环境</li>
+                    <li>无需 HTTPS</li>
+                    <li>支持 IP 访问</li>
+                    <li>立即可用</li>
+                </ul>
+                <button class="card-button">使用兼容版</button>
+            </a>
+        </div>
+
+        <div class="info-box">
+            <h3>💡 如何选择？</h3>
+            <p>
+                <strong>本地开发</strong>：使用标准版（localhost 访问）<br>
+                <strong>生产环境（有 HTTPS）</strong>：使用标准版<br>
+                <strong>生产环境（无 HTTPS）</strong>：使用兼容版<br>
+                <strong>通过 IP 访问</strong>：使用兼容版<br>
+                <strong>遇到 SharedArrayBuffer 错误</strong>：使用兼容版
+            </p>
+            <p style="margin-top: 1rem;">
+                查看 <a href="../SHAREDARRAYBUFFER_FIX.md" target="_blank">详细说明</a> 了解更多
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 自动检测并推荐版本
+        window.addEventListener('load', () => {
+            const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            const isHTTPS = location.protocol === 'https:';
+            const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined';
+            
+            console.log('环境检测:');
+            console.log('- Localhost:', isLocalhost);
+            console.log('- HTTPS:', isHTTPS);
+            console.log('- SharedArrayBuffer:', hasSharedArrayBuffer);
+            
+            if (!isLocalhost && !isHTTPS) {
+                console.log('推荐: 兼容版（非 localhost 且非 HTTPS）');
+            } else if (hasSharedArrayBuffer) {
+                console.log('推荐: 标准版（支持 SharedArrayBuffer）');
+            } else {
+                console.log('推荐: 兼容版（不支持 SharedArrayBuffer）');
+            }
+        });
+    </script>
+</body>
+</html>
