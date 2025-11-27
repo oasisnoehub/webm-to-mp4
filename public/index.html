@@ -847,13 +847,28 @@
         }
 
         // 转换
+        let isConverting = false;
+        
         document.getElementById('convertBtn').addEventListener('click', async () => {
             if (!selectedFile) return;
+            
+            // 防止重复点击
+            if (isConverting) {
+                alert('转换正在进行中，请稍候...');
+                return;
+            }
             
             // 检查使用次数
             if (!checkUsageLimit()) {
                 return;
             }
+
+            isConverting = true;
+            const convertBtn = document.getElementById('convertBtn');
+            const originalBtnText = convertBtn.textContent;
+            convertBtn.disabled = true;
+            convertBtn.style.opacity = '0.6';
+            convertBtn.style.cursor = 'not-allowed';
 
             document.getElementById('fileSelected').style.display = 'none';
             document.getElementById('progressSection').style.display = 'block';
@@ -869,8 +884,10 @@
             try {
                 addLog('开始转换流程');
                 
+                // 确保 FFmpeg 已加载
                 if (!ffmpeg) {
                     document.getElementById('statusText').textContent = '正在加载转换工具...';
+                    document.getElementById('progressText').textContent = '首次使用需要下载约 25MB';
                     addLog('正在加载 FFmpeg...');
                     
                     ffmpeg = createFFmpeg({
@@ -887,14 +904,31 @@
                         }
                     });
                     
-                    await ffmpeg.load();
-                    addLog('✓ FFmpeg 加载成功', 'success');
+                    try {
+                        await ffmpeg.load();
+                        addLog('✓ FFmpeg 加载成功', 'success');
+                    } catch (loadError) {
+                        throw new Error('FFmpeg 加载失败: ' + loadError.message + '\n\n可能是网络问题，请刷新页面重试');
+                    }
+                }
+
+                // 验证 FFmpeg 是否真的准备好了
+                if (!ffmpeg.isLoaded || !ffmpeg.isLoaded()) {
+                    throw new Error('FFmpeg 未完全加载，请刷新页面重试');
                 }
 
                 document.getElementById('statusText').textContent = '正在转换视频...';
+                document.getElementById('progressText').textContent = '正在处理';
+                document.getElementById('progressBar').style.width = '0%';
                 
                 addLog('写入输入文件...');
                 const inputData = await fetchFile(selectedFile);
+                
+                // 确保 FS 可用
+                if (!ffmpeg.FS) {
+                    throw new Error('FFmpeg 文件系统不可用，请刷新页面重试');
+                }
+                
                 ffmpeg.FS('writeFile', 'input.webm', inputData);
                 addLog(`✓ 输入文件: ${inputData.length} 字节`, 'success');
                 
@@ -954,8 +988,30 @@
                 
             } catch (error) {
                 addLog(`错误: ${error.message}`, 'error');
-                alert('转换失败: ' + error.message);
+                console.error('详细错误:', error);
+                
+                // 显示友好的错误提示
+                let errorMsg = error.message;
+                if (errorMsg.includes('not ready') || errorMsg.includes('未完全加载')) {
+                    errorMsg = 'FFmpeg 加载未完成\n\n请刷新页面后重试，或等待几秒后再点击转换';
+                } else if (errorMsg.includes('load')) {
+                    errorMsg = 'FFmpeg 加载失败\n\n可能是网络问题，请检查网络连接后刷新页面重试';
+                }
+                
+                alert('转换失败:\n\n' + errorMsg);
+                
+                // 重置 FFmpeg 状态
+                ffmpeg = null;
                 reset();
+            } finally {
+                // 恢复按钮状态
+                isConverting = false;
+                const convertBtn = document.getElementById('convertBtn');
+                if (convertBtn) {
+                    convertBtn.disabled = false;
+                    convertBtn.style.opacity = '1';
+                    convertBtn.style.cursor = 'pointer';
+                }
             }
         });
 
@@ -990,6 +1046,40 @@
         }
 
         document.getElementById('resetBtn').addEventListener('click', reset);
+
+        // 预加载 FFmpeg（可选，提升用户体验）
+        let ffmpegPreloading = false;
+        
+        function preloadFFmpeg() {
+            if (ffmpeg || ffmpegPreloading) return;
+            
+            ffmpegPreloading = true;
+            console.log('开始预加载 FFmpeg...');
+            
+            const { createFFmpeg } = FFmpeg;
+            ffmpeg = createFFmpeg({ log: false });
+            
+            ffmpeg.load()
+                .then(() => {
+                    console.log('✓ FFmpeg 预加载成功');
+                    ffmpegPreloading = false;
+                })
+                .catch((error) => {
+                    console.warn('FFmpeg 预加载失败:', error.message);
+                    ffmpeg = null;
+                    ffmpegPreloading = false;
+                });
+        }
+
+        // 页面加载完成后延迟预加载（避免影响页面加载速度）
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                // 只有在用户看起来会使用时才预加载
+                if (!currentUser || (currentUser && currentUser.plan === 'free' && usageCount < MAX_FREE_USES)) {
+                    preloadFFmpeg();
+                }
+            }, 3000); // 3秒后开始预加载
+        });
     </script>
 </body>
 </html>

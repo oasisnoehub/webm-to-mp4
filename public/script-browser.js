@@ -32,6 +32,11 @@ async function loadFFmpeg() {
         const { createFFmpeg, fetchFile } = FFmpeg;
         ffmpeg = createFFmpeg({ 
             log: true,
+            logger: ({ type, message }) => {
+                if (type === 'fferr' && message.includes('error')) {
+                    console.error(`FFmpeg: ${message}`);
+                }
+            },
             progress: ({ ratio }) => {
                 const percent = Math.round(ratio * 100);
                 progressFill.style.width = percent + '%';
@@ -44,11 +49,18 @@ async function loadFFmpeg() {
         
         await ffmpeg.load();
         
+        // 验证 FFmpeg 是否真的加载成功
+        if (!ffmpeg.isLoaded || !ffmpeg.isLoaded()) {
+            throw new Error('FFmpeg 未完全加载');
+        }
+        
         ffmpegLoaded = true;
-        console.log('FFmpeg 加载成功');
+        console.log('✓ FFmpeg 加载成功');
         return true;
     } catch (error) {
         console.error('FFmpeg 加载失败:', error);
+        ffmpegLoaded = false;
+        ffmpeg = null;
         return false;
     }
 }
@@ -114,12 +126,26 @@ removeFileBtn.addEventListener('click', () => {
     resetUpload();
 });
 
+// 防止重复点击
+let isConverting = false;
+
 // 开始转换
 convertBtn.addEventListener('click', async () => {
     if (!selectedFile) {
         alert('请先选择文件');
         return;
     }
+    
+    // 防止重复点击
+    if (isConverting) {
+        alert('转换正在进行中，请稍候...');
+        return;
+    }
+    
+    isConverting = true;
+    convertBtn.disabled = true;
+    convertBtn.style.opacity = '0.6';
+    convertBtn.style.cursor = 'not-allowed';
     
     console.log('开始转换文件:', selectedFile.name);
     
@@ -132,8 +158,18 @@ convertBtn.addEventListener('click', async () => {
         if (!ffmpegLoaded) {
             const loaded = await loadFFmpeg();
             if (!loaded) {
-                throw new Error('无法加载转换工具');
+                throw new Error('无法加载转换工具，请刷新页面重试');
             }
+        }
+        
+        // 再次验证 FFmpeg 是否准备好
+        if (!ffmpeg || !ffmpeg.isLoaded || !ffmpeg.isLoaded()) {
+            throw new Error('FFmpeg 未完全加载，请刷新页面重试');
+        }
+        
+        // 验证文件系统是否可用
+        if (!ffmpeg.FS) {
+            throw new Error('FFmpeg 文件系统不可用，请刷新页面重试');
         }
         
         progressTitle.textContent = '正在转换...';
@@ -143,29 +179,91 @@ convertBtn.addEventListener('click', async () => {
         const outputFileName = 'output.mp4';
         
         // 写入文件到 FFmpeg 虚拟文件系统
-        ffmpeg.FS('writeFile', inputFileName, await FFmpeg.fetchFile(selectedFile));
+        console.log('写入输入文件...');
+        const inputData = await FFmpeg.fetchFile(selectedFile);
+        ffmpeg.FS('writeFile', inputFileName, inputData);
+        console.log(`✓ 输入文件写入成功: ${inputData.length} 字节`);
         
-        // 执行转换
-        await ffmpeg.run(
-            '-i', inputFileName,
-            '-c:v', 'libx264',
-            '-c:a', 'aac',
-            '-movflags', '+faststart',
-            outputFileName
-        );
+        // 尝试多种转换方法
+        const methods = [
+            {
+                name: '快速转换',
+                args: ['-i', inputFileName, '-c', 'copy', outputFileName]
+            },
+            {
+                name: '标准转换',
+                args: ['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', outputFileName]
+            },
+            {
+                name: '兼容转换',
+                args: ['-i', inputFileName, '-c:v', 'libx264', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', outputFileName]
+            }
+        ];
         
-        // 读取输出文件
-        const data = ffmpeg.FS('readFile', outputFileName);
-        convertedBlob = new Blob([data.buffer], { type: 'video/mp4' });
+        let success = false;
+        let data = null;
         
-        // 清理
-        ffmpeg.FS('unlink', inputFileName);
-        ffmpeg.FS('unlink', outputFileName);
+        for (const method of methods) {
+            console.log(`尝试${method.name}...`);
+            progressText.textContent = `正在尝试${method.name}...`;
+            
+            try {
+                await ffmpeg.run(...method.args);
+                data = ffmpeg.FS('readFile', outputFileName);
+                
+                if (data && data.length > 0) {
+                    console.log(`✓ ${method.name}成功！输出大小: ${data.length} 字节`);
+                    success = true;
+                    
+                    // 清理输出文件
+                    try {
+                        ffmpeg.FS('unlink', outputFileName);
+                    } catch (e) {
+                        console.warn('清理输出文件失败:', e);
+                    }
+                    break;
+                }
+            } catch (error) {
+                console.warn(`${method.name}失败:`, error.message);
+            }
+        }
         
-        showResult();
+        // 清理输入文件
+        try {
+            ffmpeg.FS('unlink', inputFileName);
+        } catch (e) {
+            console.warn('清理输入文件失败:', e);
+        }
+        
+        if (success && data) {
+            convertedBlob = new Blob([data.buffer], { type: 'video/mp4' });
+            showResult();
+        } else {
+            throw new Error('所有转换方法都失败了，请尝试其他文件或刷新页面重试');
+        }
+        
     } catch (error) {
         console.error('转换错误:', error);
-        showError('转换失败: ' + error.message);
+        
+        // 显示友好的错误提示
+        let errorMsg = error.message;
+        if (errorMsg.includes('not ready') || errorMsg.includes('未完全加载')) {
+            errorMsg = 'FFmpeg 加载未完成，请刷新页面后重试';
+        } else if (errorMsg.includes('load') || errorMsg.includes('加载')) {
+            errorMsg = 'FFmpeg 加载失败，可能是网络问题，请检查网络连接后刷新页面重试';
+        }
+        
+        showError(errorMsg);
+        
+        // 重置 FFmpeg 状态
+        ffmpegLoaded = false;
+        ffmpeg = null;
+    } finally {
+        // 恢复按钮状态
+        isConverting = false;
+        convertBtn.disabled = false;
+        convertBtn.style.opacity = '1';
+        convertBtn.style.cursor = 'pointer';
     }
 });
 
@@ -227,3 +325,35 @@ function formatFileSize(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
+
+// 预加载 FFmpeg（提升用户体验）
+let ffmpegPreloading = false;
+
+function preloadFFmpeg() {
+    if (ffmpegLoaded || ffmpegPreloading || ffmpeg) return;
+    
+    ffmpegPreloading = true;
+    console.log('开始预加载 FFmpeg...');
+    
+    loadFFmpeg()
+        .then((success) => {
+            if (success) {
+                console.log('✓ FFmpeg 预加载成功');
+            } else {
+                console.warn('FFmpeg 预加载失败');
+            }
+        })
+        .catch((error) => {
+            console.warn('FFmpeg 预加载错误:', error);
+        })
+        .finally(() => {
+            ffmpegPreloading = false;
+        });
+}
+
+// 页面加载完成后延迟预加载（避免影响页面加载速度）
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        preloadFFmpeg();
+    }, 3000); // 3秒后开始预加载
+});
