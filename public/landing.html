@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoConvert - 专业的视频格式转换服务</title>
+    <meta name="description" content="快速、安全、高质量的 WebM 转 MP4 在线转换服务。支持大文件，完全在浏览器中处理，保护您的隐私。">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Landing Page Specific Styles */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 20px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-cta {
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary-cta {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary-cta:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-secondary-cta {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary-cta:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .features {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .feature-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .pricing-section {
+            background: #f8f9ff;
+            padding: 80px 20px;
+        }
+
+        .stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .stat-item h3 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-item p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>🎬 VideoConvert</h1>
+        <p>专业的 WebM 转 MP4 在线转换服务</p>
+        <p style="font-size: 1.2rem; opacity: 0.9;">快速 · 安全 · 高质量 · 完全免费</p>
+        <div class="cta-buttons">
+            <a href="index.html" class="btn-cta btn-primary-cta">立即开始转换</a>
+            <a href="#features" class="btn-cta btn-secondary-cta">了解更多</a>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <h3>100%</h3>
+                <p>浏览器端处理</p>
+            </div>
+            <div class="stat-item">
+                <h3>500MB</h3>
+                <p>最大文件支持</p>
+            </div>
+            <div class="stat-item">
+                <h3>0</h3>
+                <p>隐私泄露风险</p>
+            </div>
+            <div class="stat-item">
+                <h3>∞</h3>
+                <p>免费使用次数</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2>为什么选择 VideoConvert？</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>极速转换</h3>
+                <p>采用最新的 WebAssembly 技术，在浏览器中实现高速视频转换，无需等待上传下载。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>隐私安全</h3>
+                <p>所有转换完全在您的浏览器中进行，文件不会上传到服务器，100% 保护您的隐私。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💎</div>
+                <h3>高质量输出</h3>
+                <p>使用 FFmpeg 核心引擎，确保转换后的视频保持原始质量，支持多种编码选项。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>跨平台支持</h3>
+                <p>支持所有现代浏览器，无论是 Windows、Mac、Linux 还是移动设备都能完美运行。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>无需安装</h3>
+                <p>无需下载安装任何软件，打开浏览器即可使用，简单方便快捷。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>智能转换</h3>
+                <p>自动选择最佳转换参数，支持多种转换策略，确保转换成功率。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing-section">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; color: #333;">选择适合您的方案</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <!-- Free Plan -->
+                <div style="background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem; color: #333;">免费版</h3>
+                    <div style="font-size: 3rem; font-weight: 800; margin-bottom: 1.5rem; color: #667eea;">¥0<span style="font-size: 1.2rem; font-weight: 400;">/月</span></div>
+                    <ul style="list-style: none; margin-bottom: 2rem;">
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 每天 3 次转换</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 最大 50MB 文件</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 标准转换速度</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 基础功能</li>
+                    </ul>
+                    <a href="index.html" style="display: block; width: 100%; padding: 1rem; background: #667eea; color: white; text-align: center; border-radius: 12px; text-decoration: none; font-weight: 600;">开始使用</a>
+                </div>
+
+                <!-- Pro Plan -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 2.5rem; border-radius: 20px; box-shadow: 0 20px 40px rgba(102,126,234,0.4); transform: scale(1.05); color: white;">
+                    <div style="background: rgba(255,255,255,0.2); display: inline-block; padding: 0.3rem 1rem; border-radius: 20px; margin-bottom: 1rem; font-size: 0.9rem;">推荐</div>
+                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem;">专业版</h3>
+                    <div style="font-size: 3rem; font-weight: 800; margin-bottom: 1.5rem;">¥29<span style="font-size: 1.2rem; font-weight: 400;">/月</span></div>
+                    <ul style="list-style: none; margin-bottom: 2rem;">
+                        <li style="padding: 0.5rem 0;">✓ 无限次转换</li>
+                        <li style="padding: 0.5rem 0;">✓ 最大 500MB 文件</li>
+                        <li style="padding: 0.5rem 0;">✓ 高速转换</li>
+                        <li style="padding: 0.5rem 0;">✓ 批量转换</li>
+                        <li style="padding: 0.5rem 0;">✓ 无广告</li>
+                        <li style="padding: 0.5rem 0;">✓ 优先支持</li>
+                    </ul>
+                    <a href="subscribe.html?plan=pro" style="display: block; width: 100%; padding: 1rem; background: white; color: #667eea; text-align: center; border-radius: 12px; text-decoration: none; font-weight: 600;">立即订阅</a>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div style="background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                    <h3 style="font-size: 1.8rem; margin-bottom: 1rem; color: #333;">企业版</h3>
+                    <div style="font-size: 3rem; font-weight: 800; margin-bottom: 1.5rem; color: #667eea;">¥199<span style="font-size: 1.2rem; font-weight: 400;">/月</span></div>
+                    <ul style="list-style: none; margin-bottom: 2rem;">
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 无限次转换</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 无文件大小限制</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ API 接口</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 团队协作</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ 专属支持</li>
+                        <li style="padding: 0.5rem 0; color: #666;">✓ SLA 保障</li>
+                    </ul>
+                    <a href="subscribe.html?plan=enterprise" style="display: block; width: 100%; padding: 1rem; background: #667eea; color: white; text-align: center; border-radius: 12px; text-decoration: none; font-weight: 600;">联系销售</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 80px 20px; text-align: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">准备好开始了吗？</h2>
+        <p style="font-size: 1.3rem; margin-bottom: 2rem; opacity: 0.95;">立即体验快速、安全的视频转换服务</p>
+        <a href="index.html" class="btn-cta btn-primary-cta">免费开始使用</a>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: #1a1a2e; color: white; padding: 40px 20px; text-align: center;">
+        <p style="margin-bottom: 1rem;">© 2024 VideoConvert. All rights reserved.</p>
+        <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;">
+            <a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none;">隐私政策</a>
+            <a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none;">服务条款</a>
+            <a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none;">联系我们</a>
+            <a href="#" style="color: rgba(255,255,255,0.7); text-decoration: none;">帮助中心</a>
+        </div>
+    </footer>
+</body>
+</html>
